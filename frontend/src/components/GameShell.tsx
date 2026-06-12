@@ -2,6 +2,7 @@ import type { GameGenome, GameSession, Material } from "../types";
 import RoundHeader from "./RoundHeader";
 import LLMPanel from "./LLMPanel";
 import TracePanel from "./TracePanel";
+import ExportTraceButton from "./ExportTraceButton";
 import ClickableTextUnits from "./fields/ClickableTextUnits";
 import GapClickText from "./fields/GapClickText";
 import CardSorting from "./fields/CardSorting";
@@ -31,6 +32,7 @@ export default function GameShell(props: Props) {
       <div className="side-col">
         <LLMPanel genome={genome} session={props.session} />
         <TracePanel session={props.session} />
+        <ExportTraceButton session={props.session} />
       </div>
     </div>
   );
