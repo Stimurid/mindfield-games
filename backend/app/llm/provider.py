@@ -1,21 +1,84 @@
-"""LLM provider abstraction. Mock by default, Anthropic if key present and MINDFIELD_LLM=anthropic."""
+"""LLM provider for Mindfield.
+
+Real LLM is mandatory for live runs — without a model, the games are not games.
+Default provider is OpenAI-compatible against 302.ai (the gateway that works
+inside RF). Mock exists ONLY for unit tests and is opt-in via MINDFIELD_LLM=mock.
+
+Env contract (read at request time, not at import):
+
+  MINDFIELD_LLM        = "openai_compatible" (default) | "mock"
+  MINDFIELD_LLM_API_BASE = base URL incl. /v1   (default: https://api.302.ai/v1)
+  MINDFIELD_LLM_API_KEY  = key for that gateway
+  MINDFIELD_LLM_MODEL    = chat model id        (default: gpt-4.1-mini)
+
+If MINDFIELD_LLM_API_KEY is absent we also accept LLM_API_KEY, then
+QUINTA_MAI_API_KEY as a last-resort shared gateway key (this is the
+shared 302.ai key already present in the workstation env).
+"""
 from __future__ import annotations
 import os
 import json
 import hashlib
+import urllib.request
+import urllib.error
 from typing import Any
 from .roles import build_prompt_for_role
 
 
+MODEL_PRESETS = [
+    {"id": "gpt-4.1-mini",  "label": "GPT-4.1 mini",  "gateway": "302.ai"},
+    {"id": "grok-4-0709",   "label": "Grok-4",        "gateway": "302.ai"},
+]
+
+
 class LLMProvider:
-    def call_role(self, role: str, context: dict[str, Any]) -> dict:
+    default_model: str | None = None
+
+    def call_role(self, role: str, context: dict[str, Any], *, model: str | None = None) -> dict:
         raise NotImplementedError
 
 
-class MockProvider(LLMProvider):
-    """Deterministic mock. Hash-derived but role-shaped so tests are stable."""
+# Per-role JSON contract — the provider enforces shape and key whitelist.
+_ROLE_SHAPE: dict[str, dict[str, type]] = {
+    "prosecutor":      {"attacks": list, "probe_question": str},
+    "spackler":        {"patch": str, "risk": str},
+    "sprout_advocate": {"counterposition": str, "pressure_question": str},
+    "literal_alien":   {"literal_reading": str, "things_i_cannot_see": list},
+}
 
-    def call_role(self, role: str, context: dict[str, Any]) -> dict:
+_NON_ASSISTANT_FOOTER = (
+    "\nHard rules:\n"
+    "- You are an organ inside the game, not an assistant.\n"
+    "- Do NOT explain the right answer. Do NOT coach. Do NOT apologise.\n"
+    "- Do NOT include keys named 'answer', 'solution', 'explanation_for_player',\n"
+    "  'helpful_tip', 'guidance', or 'feedback'.\n"
+    "- Output ONLY the JSON object specified, with the exact keys, nothing else.\n"
+    "- No markdown, no code fences, no leading or trailing prose.\n"
+)
+
+
+def _coerce(role: str, data: dict) -> dict:
+    """Trim to allowed keys and validate shape; raise on contract break."""
+    shape = _ROLE_SHAPE[role]
+    out: dict[str, Any] = {}
+    for k, t in shape.items():
+        v = data.get(k)
+        if not isinstance(v, t):
+            if t is list and isinstance(v, str):
+                v = [v]
+            elif t is str and isinstance(v, list):
+                v = " · ".join(str(x) for x in v)
+            else:
+                raise ValueError(f"role {role} returned bad shape: {k!r} is {type(v).__name__}, expected {t.__name__}")
+        out[k] = v
+    return out
+
+
+class MockProvider(LLMProvider):
+    """Deterministic mock — TESTS ONLY. Never used at runtime by default."""
+    default_model = "mock"
+
+    def call_role(self, role: str, context: dict[str, Any], *, model: str | None = None) -> dict:
         spec = build_prompt_for_role(role, context)
         digest = hashlib.sha256(
             (role + json.dumps(context, sort_keys=True, ensure_ascii=False)).encode("utf-8")
@@ -24,7 +87,6 @@ class MockProvider(LLMProvider):
 
         if role == "prosecutor":
             phrase = context.get("phrase", "")
-            op = context.get("claimed_operation", "")
             attack_pool = [
                 "this reads as a dramatic amplifier rather than a distinction",
                 "high-status word doing no operation here",
@@ -35,15 +97,9 @@ class MockProvider(LLMProvider):
             ]
             attacks = [attack_pool[seed % len(attack_pool)], attack_pool[(seed >> 4) % len(attack_pool)]]
             probe = f"what would break in the text if we deleted {phrase[:60]!r}? name the operation, not the importance"
-            return {
-                "_role": role,
-                "_prompt_spec": spec,
-                "attacks": attacks,
-                "probe_question": probe,
-            }
+            return {"_role": role, "_prompt_spec": spec, "attacks": attacks, "probe_question": probe}
 
         if role == "spackler":
-            absence = context.get("absence_type", "logical")
             patches_by_type = {
                 "logical": ("thus, by extension, we obtain that the conclusion follows naturally",
                             "covers a missing inference step with a phatic connector"),
@@ -60,13 +116,8 @@ class MockProvider(LLMProvider):
                 "ontology": ("at the appropriate level of abstraction this is consistent",
                              "smuggles a level switch as if it were obvious"),
             }
-            patch, risk = patches_by_type.get(absence, patches_by_type["logical"])
-            return {
-                "_role": role,
-                "_prompt_spec": spec,
-                "patch": patch,
-                "risk": risk,
-            }
+            patch, risk = patches_by_type.get(context.get("absence_type", "logical"), patches_by_type["logical"])
+            return {"_role": role, "_prompt_spec": spec, "patch": patch, "risk": risk}
 
         if role == "sprout_advocate":
             fate = context.get("fate", "cut")
@@ -75,72 +126,118 @@ class MockProvider(LLMProvider):
                 counter = f"defended: {card[:60]!r} has a slow seed — you cut a register, not a slop"
                 question = "what operation might this enable in a later round?"
             elif fate == "incubate":
-                counter = "attacked: this might be beautifully dead — it sounds like a sprout but has no testable next move"
+                counter = "attacked: this might be beautifully dead — sounds like a sprout but has no testable next move"
                 question = "how would you detect it rotting versus opening?"
             elif fate == "require_proof":
                 counter = "attacked: proof too early can sterilize a register that needs to ripen first"
                 question = "what proof exactly? a counter-example? a use? a yield?"
-            else:  # no_name
+            else:
                 counter = "attacked: not-naming may be intellectual cowardice masquerading as wisdom"
                 question = "what would change if you had to name it right now?"
-            return {
-                "_role": role,
-                "_prompt_spec": spec,
-                "counterposition": counter,
-                "pressure_question": question,
-            }
+            return {"_role": role, "_prompt_spec": spec, "counterposition": counter, "pressure_question": question}
 
         if role == "literal_alien":
             phrase = context.get("phrase", "")
             medium = context.get("medium", "talk")
-            literal = f"literally: {phrase!r}. surface intent reads as a neutral declarative."
-            missed = [
-                f"in-group code specific to {medium}",
-                "pathos-reset rudeness as a stabilising move",
-                "who is actually addressed and who must answer",
-            ]
             return {
                 "_role": role,
                 "_prompt_spec": spec,
-                "literal_reading": literal,
-                "things_i_cannot_see": missed,
+                "literal_reading": f"literally: {phrase!r}. surface intent reads as a neutral declarative.",
+                "things_i_cannot_see": [
+                    f"in-group code specific to {medium}",
+                    "pathos-reset rudeness as a stabilising move",
+                    "who is actually addressed and who must answer",
+                ],
             }
 
         raise ValueError(f"unsupported role {role}")
 
 
-class AnthropicProvider(LLMProvider):
-    def __init__(self, model: str = "claude-haiku-4-5-20251001"):
-        from anthropic import Anthropic
-        self.client = Anthropic()
-        self.model = model
+class OpenAICompatibleProvider(LLMProvider):
+    """Talks to any OpenAI-compatible /chat/completions endpoint.
 
-    def call_role(self, role: str, context: dict[str, Any]) -> dict:
+    Default target is 302.ai (https://api.302.ai/v1) which is the working
+    gateway inside RF and the one used by sister projects (Quinta, Litops).
+    """
+
+    def __init__(self, *, base_url: str, api_key: str, model: str):
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.default_model = model
+
+    def call_role(self, role: str, context: dict[str, Any], *, model: str | None = None) -> dict:
+        if role not in _ROLE_SHAPE:
+            raise ValueError(f"unknown role {role}")
+        chosen = model or self.default_model
+        allowed = {p["id"] for p in MODEL_PRESETS}
+        if chosen not in allowed:
+            chosen = self.default_model
         spec = build_prompt_for_role(role, context)
-        msg = self.client.messages.create(
-            model=self.model,
-            max_tokens=600,
-            system=spec["system"] + "\nReturn ONLY a JSON object. No prose, no code fences.",
-            messages=[{"role": "user", "content": spec["user"]}],
+        system = spec["system"] + _NON_ASSISTANT_FOOTER
+        body = {
+            "model": chosen,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user",   "content": spec["user"]},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.7,
+            "max_tokens": 600,
+        }
+        req = urllib.request.Request(
+            f"{self.base_url}/chat/completions",
+            data=json.dumps(body).encode("utf-8"),
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}",
+            },
         )
-        text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text").strip()
+        try:
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                raw = resp.read().decode("utf-8")
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", errors="replace")[:400]
+            raise RuntimeError(f"LLM gateway HTTP {e.code}: {detail}") from None
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"LLM gateway unreachable: {e.reason}") from None
+
+        payload = json.loads(raw)
+        try:
+            content = payload["choices"][0]["message"]["content"]
+        except (KeyError, IndexError):
+            raise RuntimeError(f"LLM gateway returned no content: {raw[:300]}")
+        text = content.strip()
         if text.startswith("```"):
-            text = text.strip("`")
-            if text.startswith("json"):
-                text = text[4:]
+            text = text.strip("`").lstrip("json").strip()
         try:
             data = json.loads(text)
-        except Exception:
-            data = {"_raw": text, "_parse_error": True}
+        except json.JSONDecodeError:
+            raise RuntimeError(f"LLM returned non-JSON: {text[:300]}")
+
+        data = _coerce(role, data)
         data["_role"] = role
+        data["_model"] = chosen
         return data
 
 
 def get_provider() -> LLMProvider:
-    kind = os.environ.get("MINDFIELD_LLM", "mock").lower()
-    if kind == "anthropic" and os.environ.get("ANTHROPIC_API_KEY"):
-        try:
-            return AnthropicProvider()
-        except Exception:
-            return MockProvider()
-    return MockProvider()
+    kind = os.environ.get("MINDFIELD_LLM", "openai_compatible").lower()
+    if kind == "mock":
+        return MockProvider()
+    if kind in ("openai_compatible", "openai", "302ai", "302"):
+        base = os.environ.get("MINDFIELD_LLM_API_BASE", "https://api.302.ai/v1")
+        key = (
+            os.environ.get("MINDFIELD_LLM_API_KEY")
+            or os.environ.get("LLM_API_KEY")
+            or os.environ.get("QUINTA_MAI_API_KEY")
+        )
+        model = os.environ.get("MINDFIELD_LLM_MODEL", "gpt-4.1-mini")
+        if not key:
+            raise RuntimeError(
+                "LLM key not found. Set MINDFIELD_LLM_API_KEY (or LLM_API_KEY, "
+                "or use the shared QUINTA_MAI_API_KEY already in env). To run "
+                "tests without a real model, set MINDFIELD_LLM=mock explicitly."
+            )
+        return OpenAICompatibleProvider(base_url=base, api_key=key, model=model)
+    raise RuntimeError(f"MINDFIELD_LLM={kind!r} is not a known provider")

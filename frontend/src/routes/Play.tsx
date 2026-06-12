@@ -13,6 +13,19 @@ export default function Play() {
   const [material, setMaterial] = useState<Material | null>(null);
   const [session, setSession] = useState<GameSession | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [models, setModels] = useState<{ id: string; label: string; gateway: string }[]>([]);
+  const [model, setModel] = useState<string>(() => localStorage.getItem("mindfield.model") ?? "");
+
+  useEffect(() => {
+    api.listModels().then(r => {
+      setModels(r.presets);
+      if (!model) {
+        const m = localStorage.getItem("mindfield.model") ?? r.default ?? r.presets[0]?.id ?? "";
+        setModel(m);
+        if (m) localStorage.setItem("mindfield.model", m);
+      }
+    }).catch(() => {});
+  }, []);
 
   // Phase 1: load genome + materials list.
   useEffect(() => {
@@ -84,6 +97,20 @@ export default function Play() {
             ))}
           </select>
         </div>
+        {models.length > 0 && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <label className="muted" style={{ margin: 0 }}>LLM:</label>
+            <select
+              value={model}
+              onChange={e => { setModel(e.target.value); localStorage.setItem("mindfield.model", e.target.value); }}
+              style={{ width: "auto" }}
+            >
+              {models.map(m => (
+                <option key={m.id} value={m.id}>{m.label} · {m.gateway}</option>
+              ))}
+            </select>
+          </div>
+        )}
         {session && <span className="muted">session <span className="kbd">{session.id.slice(0, 8)}</span></span>}
       </div>
       {(!material || !session) ? (

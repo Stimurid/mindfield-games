@@ -67,6 +67,7 @@ class InterventionRequest(BaseModel):
     role: str
     move_ids: list[str] = Field(default_factory=list)
     context: dict[str, Any] = Field(default_factory=dict)
+    model: Optional[str] = None
 
 
 class InterventionOut(BaseModel):

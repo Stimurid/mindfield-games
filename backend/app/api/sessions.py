@@ -117,7 +117,7 @@ def intervene(session_id: str, payload: InterventionRequest, db: Session = Depen
     if not s:
         raise HTTPException(404, "no session")
     provider = get_provider()
-    out = provider.call_role(payload.role, payload.context)
+    out = provider.call_role(payload.role, payload.context, model=payload.model)
     spec = out.pop("_prompt_spec", None)
     if spec:
         prompt_text = f"[system]\n{spec.get('system','')}\n[user]\n{spec.get('user','')}"

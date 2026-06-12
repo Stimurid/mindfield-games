@@ -26,12 +26,16 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }).then(j<PlayerMove>),
-  llmIntervene: (sid: string, role: string, context: any, move_ids: string[] = []) =>
-    fetch(`${BASE}/api/sessions/${sid}/llm-intervention`, {
+  llmIntervene: (sid: string, role: string, context: any, move_ids: string[] = [], model?: string) => {
+    const m = model ?? localStorage.getItem("mindfield.model") ?? undefined;
+    return fetch(`${BASE}/api/sessions/${sid}/llm-intervention`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, context, move_ids }),
-    }).then(j<LLMIntervention>),
+      body: JSON.stringify({ role, context, move_ids, model: m }),
+    }).then(j<LLMIntervention>);
+  },
+  listModels: () =>
+    fetch(`${BASE}/api/llm/models`).then(j<{ presets: { id: string; label: string; gateway: string }[]; default: string; provider: string }>),
   complete: (sid: string) =>
     fetch(`${BASE}/api/sessions/${sid}/complete`, { method: "POST" }).then(j<GameSession>),
   exportMd: (sid: string) =>
