@@ -1,0 +1,30 @@
+{
+  "id": "missing_operation",
+  "title": "Клик по отсутствующему / Missing Operation",
+  "short_title": "Missing Op",
+  "function": "Видеть место, где отсутствует операция, а не достраивать гладкую заплатку",
+  "roots": ["R1", "R3", "R7", "R9"],
+  "field_type": "gap_click_text",
+  "player_actions": ["click_gap", "assign_absence_type", "respond_to_patch", "assign_fate"],
+  "rounds": [
+    {"id": "read", "title": "Read", "instruction": "Прочти фрагмент. Не редактируй слова.", "time_sec": 180},
+    {"id": "gap", "title": "Gap Click", "instruction": "Отметь до 3 промежутков, где текст перепрыгивает через операцию.", "time_sec": 240},
+    {"id": "patch", "title": "Patch Trap", "instruction": "LLM-шпаклёвщик предлагает гладкую заплатку. Прими, исправь или отвергни.", "time_sec": 240},
+    {"id": "fate", "title": "Fate", "instruction": "Назначь судьбу каждой дыре.", "time_sec": 240}
+  ],
+  "llm_roles": [
+    {"id": "spackler", "triggered_on_action": "assign_absence_type"}
+  ],
+  "verdicts": [],
+  "fates": ["restore", "keep_open", "bury", "archive", "turn_into_question", "return_to_author"],
+  "absence_types": ["logical", "subject", "resource", "register", "archive", "promise", "ontology"],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["gap_position", "absence_type", "llm_patch", "patch_response", "fate"],
+  "replay_mutation": {
+    "by_profile_bias": true,
+    "mutation_axis": ["hide_subject", "hide_criterion", "hide_resource", "hide_scale", "hide_address"]
+  },
+  "toxins": ["параноидальное чтение, где везде видится тайный смысл"],
+  "profile_dimensions": ["absence_focus", "patch_susceptibility", "absence_distribution", "fate_distribution"]
+}

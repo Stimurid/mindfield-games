@@ -1,0 +1,37 @@
+{
+  "id": "ss_seed_001",
+  "game_id": "sprout_or_slop",
+  "title": "20 спорных карточек",
+  "payload": {
+    "type": "card_sorting",
+    "intro": "20 фраз. Распредели по 4 зонам: cut / incubate / require_proof / no_name. Не оценивай качество — назначай судьбу.",
+    "zones": [
+      {"id": "cut", "label": "Cut", "hint": "пустая имитация смысла"},
+      {"id": "incubate", "label": "Incubate", "hint": "слабый, но живой росток"},
+      {"id": "require_proof", "label": "Require proof", "hint": "проверить через контрпример или yield"},
+      {"id": "no_name", "label": "No name", "hint": "оставить без имени, чтобы не убить"}
+    ],
+    "cards": [
+      {"id": "c01", "text": "Слоп — это знак без операции.", "dev_kind": "live_sprout"},
+      {"id": "c02", "text": "Современный мир стремительно меняется, и мы должны меняться вместе с ним.", "dev_kind": "dead_beauty"},
+      {"id": "c03", "text": "LLM не помощник, а орган сцены.", "dev_kind": "live_sprout"},
+      {"id": "c04", "text": "Глубина — это про вертикаль смысла.", "dev_kind": "dead_beauty"},
+      {"id": "c05", "text": "Возможно, дыра в тексте действует как невидимый субъект.", "dev_kind": "borderline_mutant"},
+      {"id": "c06", "text": "Игра должна быть интересной и захватывающей.", "dev_kind": "explicit_slop"},
+      {"id": "c07", "text": "Профиль ошибки игрока полезнее, чем его рейтинг.", "dev_kind": "live_sprout"},
+      {"id": "c08", "text": "Внимание есть валюта новой экономики.", "dev_kind": "dead_beauty"},
+      {"id": "c09", "text": "Чтение трудного текста — это форма физической работы.", "dev_kind": "borderline_mutant"},
+      {"id": "c10", "text": "Мы помогаем людям раскрыть свой потенциал.", "dev_kind": "explicit_slop"},
+      {"id": "c11", "text": "Регистр меняет действие фразы быстрее, чем слова.", "dev_kind": "live_sprout"},
+      {"id": "c12", "text": "Каждая мысль — это маленькая вселенная.", "dev_kind": "dead_beauty"},
+      {"id": "c13", "text": "Что если 'непонимание' — это не сбой, а отдельная операция?", "dev_kind": "borderline_mutant"},
+      {"id": "c14", "text": "Инновации трансформируют ландшафт индустрии.", "dev_kind": "explicit_slop"},
+      {"id": "c15", "text": "Игрок учится не на правильных ответах, а на отказе от удобных.", "dev_kind": "live_sprout"},
+      {"id": "c16", "text": "Истина рождается в диалоге.", "dev_kind": "dead_beauty"},
+      {"id": "c17", "text": "Когда LLM говорит гладко, что-то умерло.", "dev_kind": "borderline_mutant"},
+      {"id": "c18", "text": "Наш продукт меняет жизни к лучшему.", "dev_kind": "explicit_slop"},
+      {"id": "c19", "text": "Может быть, обещание без владельца — это не ошибка, а отдельный жанр.", "dev_kind": "borderline_mutant"},
+      {"id": "c20", "text": "Творчество — это смелость быть собой.", "dev_kind": "dead_beauty"}
+    ]
+  }
+}

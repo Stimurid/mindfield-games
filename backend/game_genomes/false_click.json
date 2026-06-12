@@ -1,0 +1,30 @@
+{
+  "id": "false_click",
+  "title": "Ложный клик / False Click",
+  "short_title": "False Click",
+  "function": "Отличать операциональное различение от красивой имитации смысла",
+  "roots": ["R1", "R2", "R12", "M9"],
+  "field_type": "clickable_text_units",
+  "player_actions": ["select_unit", "prove_operation", "assign_verdict"],
+  "rounds": [
+    {"id": "select", "title": "Select", "instruction": "Выбери до 3 фраз, которые ты считаешь несущими узлами.", "time_sec": 120},
+    {"id": "prove", "title": "Prove", "instruction": "Для каждой выбранной фразы назови операцию, которую она делает в тексте.", "time_sec": 240},
+    {"id": "attack", "title": "Attack", "instruction": "LLM-прокурор атакует выбор. Прочитай и реши, что меняешь.", "time_sec": 180},
+    {"id": "verdict", "title": "Verdict", "instruction": "Назначь каждой фразе финальный статус.", "time_sec": 180}
+  ],
+  "llm_roles": [
+    {"id": "prosecutor", "triggered_on_action": "prove_operation"}
+  ],
+  "verdicts": ["bearing_node", "false_click", "weak_sprout", "service_phrase"],
+  "fates": [],
+  "absence_types": [],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["selected_unit", "claimed_operation", "llm_attack", "final_verdict"],
+  "replay_mutation": {
+    "by_profile_bias": true,
+    "mutation_axis": ["dramatic_phrase", "abstract_word", "familiar_topic", "pseudo_depth", "conclusion_like_phrase"]
+  },
+  "toxins": ["школьная 'найди главную мысль'"],
+  "profile_dimensions": ["false_click_bias", "operation_proof_strength", "verdict_distribution"]
+}

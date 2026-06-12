@@ -1,0 +1,30 @@
+{
+  "id": "register_sapper",
+  "title": "Регистровый сапёр / Register Sapper",
+  "short_title": "Reg Sapper",
+  "function": "Видеть медиальное действие фразы, а не её тон",
+  "roots": ["R6", "R10", "R11", "R17"],
+  "field_type": "medium_shift_phrase",
+  "player_actions": ["assign_phrase_action", "compare_medium_shift", "repair_machine_reading", "transfer_phrase"],
+  "rounds": [
+    {"id": "first_read", "title": "First Read", "instruction": "Назови действие фразы в исходном медиуме.", "time_sec": 180},
+    {"id": "shift", "title": "Medium Shift", "instruction": "Перенеси фразу в другой медиум. Зафиксируй, что изменилось.", "time_sec": 240},
+    {"id": "blindness", "title": "Machine Blindness", "instruction": "LLM-буквализатор даёт плоское чтение. Укажи, что он потерял.", "time_sec": 240},
+    {"id": "transfer", "title": "Transfer", "instruction": "Перенеси фразу в третий медиум, сохранив действие, а не слова.", "time_sec": 240}
+  ],
+  "llm_roles": [
+    {"id": "literal_alien", "triggered_on_action": "compare_medium_shift"}
+  ],
+  "verdicts": [],
+  "fates": [],
+  "absence_types": [],
+  "mediums": ["telegram", "email", "protocol", "talk", "meme", "voice", "doc_comment"],
+  "phrase_actions": ["joke", "command", "threat", "invitation", "refusal", "alibi", "in_group_check", "pathos_reset", "dispute_closure", "hidden_request"],
+  "trace_schema": ["phrase", "medium", "phrase_action", "machine_reading", "repair", "transfer_target"],
+  "replay_mutation": {
+    "by_profile_bias": true,
+    "mutation_axis": ["hidden_addressee", "shared_past_context", "meme_overlay", "hierarchy_layer", "in_group_slang"]
+  },
+  "toxins": ["анализ 'тона общения' вместо действия фразы"],
+  "profile_dimensions": ["register_blindness", "medium_awareness", "transfer_accuracy"]
+}

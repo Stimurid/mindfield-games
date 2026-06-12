@@ -1,0 +1,58 @@
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { api } from "../api/client";
+import type { GameSession } from "../types";
+
+export default function Profile() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const [session, setSession] = useState<GameSession | null>(null);
+  const [md, setMd] = useState<string>("");
+
+  useEffect(() => {
+    if (!sessionId) return;
+    api.getSession(sessionId).then(setSession);
+    api.exportMd(sessionId).then(setMd);
+  }, [sessionId]);
+
+  if (!session) return <div className="app"><div className="muted">Loading…</div></div>;
+  const profile = session.trace_profile ?? {};
+
+  function downloadMd() {
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `mindfield-${session?.id.slice(0, 8)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="app">
+      <div className="header">
+        <Link to="/">← все игры</Link>
+        <button onClick={downloadMd}>Скачать .md</button>
+      </div>
+      <h2>Operator Profile <span className="muted" style={{ fontSize: 14 }}>· {session.game_id}</span></h2>
+      <div className="card">
+        <div className="muted" style={{ fontSize: 12 }}>Качественный профиль, не баллы. Замечаешь паттерн — следующий раунд бьёт по нему.</div>
+        <div style={{ marginTop: 12 }}>
+          {Object.entries(profile.dimensions ?? {}).map(([k, v]) => (
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+              <span className="muted">{k}</span>
+              <span><b>{typeof v === "object" ? JSON.stringify(v) : String(v)}</b></span>
+            </div>
+          ))}
+        </div>
+        {profile.replay_targets?.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <div className="muted" style={{ fontSize: 12 }}>Replay targets — что усложнить в следующем раунде:</div>
+            {profile.replay_targets.map((t: string) => <span key={t} className="kbd" style={{ marginRight: 6 }}>{t}</span>)}
+          </div>
+        )}
+      </div>
+      <h3 style={{ marginTop: 24 }}>Markdown summary</h3>
+      <pre className="profile">{md}</pre>
+    </div>
+  );
+}

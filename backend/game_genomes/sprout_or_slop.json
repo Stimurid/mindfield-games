@@ -1,0 +1,30 @@
+{
+  "id": "sprout_or_slop",
+  "title": "Росток или слоп / Sprout or Slop",
+  "short_title": "Sprout/Slop",
+  "function": "Назначать судьбу слабому материалу, не стерилизуя поле и не сохраняя мусор",
+  "roots": ["R2", "R4", "R18", "M8", "M9"],
+  "field_type": "card_sorting",
+  "player_actions": ["sort_card", "defend_fate", "revise_fate", "set_incubation_test"],
+  "rounds": [
+    {"id": "sort", "title": "Sorting", "instruction": "Распредели карточки по 4 зонам: cut / incubate / require_proof / no_name.", "time_sec": 300},
+    {"id": "counter", "title": "Countercase", "instruction": "LLM-адвокат спорит по выбранным карточкам. Прочти возражения.", "time_sec": 240},
+    {"id": "revise", "title": "Criterion", "instruction": "Подтверди или измени судьбу. Назови критерий.", "time_sec": 240},
+    {"id": "incubate", "title": "Incubation Mark", "instruction": "Для 1–2 ростков задай срок и способ проверки.", "time_sec": 180}
+  ],
+  "llm_roles": [
+    {"id": "sprout_advocate", "triggered_on_action": "sort_card"}
+  ],
+  "verdicts": [],
+  "fates": ["cut", "incubate", "require_proof", "no_name"],
+  "absence_types": [],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["card_id", "initial_fate", "advocate_pressure", "final_fate", "criterion"],
+  "replay_mutation": {
+    "by_profile_bias": true,
+    "mutation_axis": ["return_old_decisions", "harder_borderline_cards", "add_dead_beauties", "add_live_uglies"]
+  },
+  "toxins": ["интеллектуальная стерилизация или романтизация мутности"],
+  "profile_dimensions": ["selection_bias", "revisions", "incubation_tests_set", "fate_distribution"]
+}

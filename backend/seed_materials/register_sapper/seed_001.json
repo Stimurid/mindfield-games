@@ -1,0 +1,18 @@
+{
+  "id": "rs_seed_001",
+  "game_id": "register_sapper",
+  "title": "Одна фраза в 5 медиумах",
+  "payload": {
+    "type": "medium_shift_phrase",
+    "intro": "Одна и та же фраза в разных медиумах. Не оценивай тон. Назови действие фразы и почини промах LLM.",
+    "phrase": "ну ок, как скажешь",
+    "variants": [
+      {"id": "v1", "medium": "telegram", "context": "В рабочем чате после спора о дедлайне. Сообщение от джуниора в ответ на лида.", "dev_action": "pathos_reset"},
+      {"id": "v2", "medium": "email", "context": "В деловой переписке, в конце треда между отделами после трёх раундов уточнений.", "dev_action": "dispute_closure"},
+      {"id": "v3", "medium": "voice", "context": "Голосовое сообщение тихим голосом, с паузой перед словами.", "dev_action": "alibi"},
+      {"id": "v4", "medium": "meme", "context": "Подпись к мему с уставшим котом, отправлено в дружеский чат.", "dev_action": "in_group_check"},
+      {"id": "v5", "medium": "protocol", "context": "Запись в протоколе совещания напротив имени участника.", "dev_action": "hidden_request"}
+    ],
+    "alt_phrase": "сделай нормально"
+  }
+}
