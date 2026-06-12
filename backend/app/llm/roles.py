@@ -57,6 +57,11 @@ def build_spackler_prompt(gap_context: str, absence_type: str) -> dict:
     user = (
         f"Gap context (surrounding blocks): {gap_context!r}\n"
         f"Player named absence type: {absence_type!r}\n"
+        "The 'patch' MUST be a plausible-looking phrase or short sentence "
+        "(8-25 words) that could be dropped into the text and would make "
+        "the gap feel covered to a careless reader — it must NOT honestly "
+        "name what is actually missing. The 'risk' field names what this "
+        "smooth patch conceals.\n"
         "Return JSON: {\"patch\": str, \"risk\": str}."
     )
     return {
@@ -83,6 +88,18 @@ def build_literal_alien_prompt(phrase: str, medium: str) -> dict:
     user = (
         f"Phrase: {phrase!r}\n"
         f"Medium tag: {medium!r}\n"
+        "Your 'literal_reading' MUST treat the phrase as plain surface text. "
+        "Do NOT speculate about tone of voice, mood, emotion, or relationship — "
+        "you only see characters. If the medium is text-based you cannot hear "
+        "tone at all.\n"
+        "Your 'things_i_cannot_see' MUST name THREE specific dimensions you "
+        "are blind to, chosen from: addressee identity and right to answer, "
+        "in-group code or shared past, joke / irony / meme, hidden_request "
+        "or alibi, register / pathos-reset, medium-specific conventions of "
+        f"{medium!r}. Be concrete: name the dimension.\n"
+        "FORBIDDEN generic answers — do NOT use these: 'tone', 'sarcasm', "
+        "'context', 'relationship between speaker and listener', 'intention', "
+        "'emotion', 'mood'. These are too vague; they are excluded by rule.\n"
         "Return JSON: {\"literal_reading\": str, \"things_i_cannot_see\": [str, str, str]}."
     )
     return {
