@@ -12,8 +12,8 @@ def list_materials(gameId: str | None = None, db: Session = Depends(get_db)):
     if gameId:
         q = q.filter(Material.game_id == gameId)
     return [
-        {"id": m.id, "game_id": m.game_id, "title": m.title}
-        for m in q.all()
+        {"id": m.id, "game_id": m.game_id, "title": m.title, "namespace": m.namespace}
+        for m in q.order_by(Material.namespace.desc(), Material.created_at.asc()).all()
     ]
 
 
@@ -22,4 +22,4 @@ def get_material(material_id: str, db: Session = Depends(get_db)):
     m = db.query(Material).filter(Material.id == material_id).first()
     if not m:
         raise HTTPException(404, "no material")
-    return {"id": m.id, "game_id": m.game_id, "title": m.title, "payload": m.payload}
+    return {"id": m.id, "game_id": m.game_id, "title": m.title, "namespace": m.namespace, "payload": m.payload}

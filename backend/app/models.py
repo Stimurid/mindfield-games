@@ -19,6 +19,7 @@ class Material(Base):
     id = Column(String, primary_key=True, default=_uuid)
     game_id = Column(String, index=True, nullable=False)
     title = Column(String, nullable=False)
+    namespace = Column(String, default="demo", index=True)  # "demo" | "real"
     payload = Column(JSON, nullable=False)  # raw seed (text blocks, cards, phrase variants)
     created_at = Column(DateTime, default=_now)
 

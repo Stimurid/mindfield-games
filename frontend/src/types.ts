@@ -32,6 +32,7 @@ export interface Material {
   id: string;
   game_id: string;
   title: string;
+  namespace?: "demo" | "real";
   payload: any;
 }
 

@@ -18,6 +18,7 @@ def seed_materials_if_empty():
                 id=seed["id"],
                 game_id=seed["game_id"],
                 title=seed["title"],
+                namespace=seed.get("namespace", "demo"),
                 payload=seed["payload"],
             ))
         db.commit()

@@ -46,8 +46,16 @@ export default function Profile() {
         </div>
         {profile.replay_targets?.length > 0 && (
           <div style={{ marginTop: 12 }}>
-            <div className="muted" style={{ fontSize: 12 }}>Replay targets — что усложнить в следующем раунде:</div>
+            <div className="muted" style={{ fontSize: 12 }}>Replay targets · теги для мутатора:</div>
             {profile.replay_targets.map((t: string) => <span key={t} className="kbd" style={{ marginRight: 6 }}>{t}</span>)}
+          </div>
+        )}
+        {profile.replay_directives?.length > 0 && (
+          <div style={{ marginTop: 16, padding: 12, background: "var(--bg)", borderRadius: 4, borderLeft: "3px solid var(--accent)" }}>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Что следующий раунд изменит конкретно:</div>
+            {profile.replay_directives.map((d: string, i: number) => (
+              <div key={i} style={{ marginTop: 4, fontSize: 13 }}>→ {d}</div>
+            ))}
           </div>
         )}
       </div>
