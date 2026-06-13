@@ -99,6 +99,20 @@ export const api = {
       headers: tokHeaders(),
       body: JSON.stringify({ model }),
     }).then(j<{ draft: any; verdict: { verb_status: string; crisis_status: string; trace_status: string; degradation_warnings: string[]; playable_verdict: string; critique: string } }>),
+  triageFates: () =>
+    fetch(`${BASE}/api/triage/fates`).then(j<{ fate: string; label: string }[]>),
+  triageEntry: (entryId: string) =>
+    fetch(`${BASE}/api/triage/entries/${entryId}`).then(j<any[]>),
+  assignFate: (entryId: string, payload: { fate: string; note?: string; organ_bank?: string; organ_name?: string }) =>
+    fetch(`${BASE}/api/triage/entries/${entryId}`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  triageQueue: (kind = "source_card", limit = 25) =>
+    fetch(`${BASE}/api/triage/queue?kind=${kind}&limit=${limit}`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<{ id: string; code: string; title: string; kind: string; body_md: string }[]>),
+  triageStats: (mine = true) =>
+    fetch(`${BASE}/api/triage/stats?mine=${mine}`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<{ total_verdicts: number; by_fate: { fate: string; label: string; count: number }[]; extracted_organs: number }>),
   librarySearch: (q: string, kind?: string) =>
     fetch(`${BASE}/api/library/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; snippet: string }[]>),
   libraryComments: (entryId: string) =>

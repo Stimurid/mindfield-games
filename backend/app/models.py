@@ -75,6 +75,23 @@ class Organ(Base):
     created_at = Column(DateTime, default=_now)
 
 
+class TriageVerdict(Base):
+    """One §4 fate assigned to a corpus entry by one player.
+
+    Multiple verdicts per entry are allowed (different players, or the
+    same player revising). The 'latest per (entry, player)' wins in the
+    aggregate view.
+    """
+    __tablename__ = "triage_verdicts"
+    id = Column(String, primary_key=True, default=_uuid)
+    entry_id = Column(String, ForeignKey("corpus_entries.id"), index=True, nullable=False)
+    player_token = Column(String, index=True, nullable=True)
+    fate = Column(String, nullable=False)
+    note = Column(String, nullable=True)
+    extracted_organ_id = Column(String, ForeignKey("organs.id"), nullable=True)
+    created_at = Column(DateTime, default=_now)
+
+
 class GenomeDraft(Base):
     """A GameGenome assembled in the configurator. Lives outside game_genomes/
     JSON until it is promoted by the designer."""

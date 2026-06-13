@@ -9,6 +9,7 @@ import Library from "./routes/Library";
 import LibrarySection from "./routes/LibrarySection";
 import LibraryEntry from "./routes/LibraryEntry";
 import Configurator from "./routes/Configurator";
+import Triage from "./routes/Triage";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -23,6 +24,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/library/section/:kind" element={<LibrarySection />} />
         <Route path="/library/entry/:id" element={<LibraryEntry />} />
         <Route path="/configurator" element={<Configurator />} />
+        <Route path="/triage" element={<Triage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,

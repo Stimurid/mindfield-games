@@ -17,6 +17,7 @@ export default function Home() {
         <h1>Mindfield Games <span className="muted">— Operator Calibration Pack</span></h1>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Link to="/library" className="kbd" style={{ textDecoration: "none" }}>Library →</Link>
+          <Link to="/triage" className="kbd" style={{ textDecoration: "none" }}>Triage →</Link>
           <Link to="/configurator" className="kbd" style={{ textDecoration: "none" }}>Configurator →</Link>
           <Link to="/operator" className="kbd" style={{ textDecoration: "none" }}>Operator Profile →</Link>
         </div>

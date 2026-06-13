@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import TriagePanel from "../components/TriagePanel";
 
 // Minimal markdown renderer — enough for body text from spec.md and phase docs.
 // No external deps; safe-by-default escaping then a few transforms.
@@ -183,6 +184,8 @@ export default function LibraryEntry() {
           ))}
         </div>
       )}
+
+      <TriagePanel entryId={entry.id} />
 
       <div className="card" style={{ marginTop: 16 }}>
         <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
