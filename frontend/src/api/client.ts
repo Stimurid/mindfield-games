@@ -171,6 +171,37 @@ export const api = {
   // Configurator promotion
   configListFieldTypes: () =>
     fetch(`${BASE}/api/configurator/field-types`).then(j<{ id: string; label: string }[]>),
+  // Playtest harness
+  playtestStart: (payload: { mode: string; selected_entry_id?: string | null; session_ids?: string[] } = { mode: "self_test" }) =>
+    fetch(`${BASE}/api/playtests/start`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  playtestGet: (id: string) =>
+    fetch(`${BASE}/api/playtests/${id}`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<any>),
+  playtestReflect: (id: string, stage: string, prompt: string, answer: string) =>
+    fetch(`${BASE}/api/playtests/${id}/reflection`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify({ stage, prompt, answer }),
+    }).then(j<any>),
+  playtestComplete: (id: string, final_verdict: string, extra_session_ids: string[] = []) =>
+    fetch(`${BASE}/api/playtests/${id}/complete`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify({ final_verdict, extra_session_ids }),
+    }).then(j<any>),
+  playtestExport: (id: string) =>
+    fetch(`${BASE}/api/playtests/${id}/export`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<{ format: string; body: string }>),
+  followupGet: (token: string) =>
+    fetch(`${BASE}/api/playtests/followup/${token}`).then(j<any>),
+  followupSubmit: (token: string, payload: any) =>
+    fetch(`${BASE}/api/playtests/followup/${token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(j<{ submitted_at: string }>),
   configPromoteDraft: (id: string, field_type: string, source_seed_material_id?: string) =>
     fetch(`${BASE}/api/configurator/drafts/${id}/promote`, {
       method: "POST",

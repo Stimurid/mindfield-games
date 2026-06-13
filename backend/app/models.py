@@ -75,6 +75,56 @@ class Organ(Base):
     created_at = Column(DateTime, default=_now)
 
 
+class PlaytestRun(Base):
+    """One end-to-end playtest cycle: triage → game → profile → replay → game.
+    Persists alongside its reflections so a remote player produces enough
+    evidence even without a live observer.
+    """
+    __tablename__ = "playtest_runs"
+    id = Column(String, primary_key=True, default=_uuid)
+    player_token = Column(String, index=True, nullable=True)
+    mode = Column(String, default="self_test")  # self_test | remote_test | moderated
+    started_at = Column(DateTime, default=_now)
+    completed_at = Column(DateTime, nullable=True)
+    selected_entry_id = Column(String, ForeignKey("corpus_entries.id"), nullable=True)
+    session_ids = Column(JSON, default=list)
+    final_verdict = Column(String, nullable=True)
+    # final_verdict ∈ {software_only, profile_recognition, replay_targeting,
+    #                  transfer_candidate, unclear}
+
+
+class ReflectionEvent(Base):
+    """One reflection prompt + answer pinned to a stage of a PlaytestRun."""
+    __tablename__ = "reflection_events"
+    id = Column(String, primary_key=True, default=_uuid)
+    run_id = Column(String, ForeignKey("playtest_runs.id"), index=True, nullable=False)
+    stage = Column(String, nullable=False)
+    # stage ∈ {after_triage, after_game_1, after_profile, after_replay,
+    #          after_game_2, final}
+    prompt = Column(String, nullable=False)
+    answer = Column(String, default="")
+    created_at = Column(DateTime, default=_now)
+
+
+class FollowUp24h(Base):
+    """Per-run 24h follow-up. The token is unguessable (UUID4 hex); the link
+    works without a logged-in cookie so the player can click it from any
+    device or email."""
+    __tablename__ = "followups_24h"
+    id = Column(String, primary_key=True, default=_uuid)
+    run_id = Column(String, ForeignKey("playtest_runs.id"), index=True, nullable=False)
+    token = Column(String, unique=True, index=True, nullable=False)
+    due_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    transfer_seen = Column(String, nullable=True)         # yes | no | unclear
+    outside_app_example = Column(String, nullable=True)
+    remembered_operation = Column(String, nullable=True)
+    confidence = Column(String, nullable=True)            # low | medium | high
+    appeared_spontaneously = Column(String, nullable=True)  # yes | no | unclear
+    game_helped = Column(String, nullable=True)           # yes | no | unclear
+    created_at = Column(DateTime, default=_now)
+
+
 class Hypothesis(Base):
     """A researcher's hypothesis about an operation, a porода, or a player pattern.
     The researcher can summon any of the 4 organ roles against it and accumulate

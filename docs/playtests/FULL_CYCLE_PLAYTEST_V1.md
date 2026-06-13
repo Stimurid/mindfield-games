@@ -3,6 +3,18 @@
 This protocol tests **the whole machine**, not the four micro-apps. One playtester, one
 observer. Total: 90 minutes (60 active + 30 reflection). The observer never coaches.
 
+> **Remote-player addendum (Phase 18):** When there is no observer next to the player —
+> remote playtests, async friends, public-link runs — the in-product evaluation harness
+> at `/playtest/full-cycle` becomes the substitute. It walks the player through the same
+> steps, asks the SAME reflection prompts the observer would ask, persists answers as
+> `ReflectionEvent` rows tied to a `PlaytestRun`, and issues a 24h follow-up token + link
+> for the C2 transfer check. **Backend traces alone do NOT prove psychotechnical signal.**
+> A remote playtest counts only when the run has reflections at all 5 stages, a final
+> verdict, and a submitted 24h follow-up — see the data model in
+> [`docs/releases/MINDFIELD_RC0_UNPROVEN_CLAIMS.md`](../releases/MINDFIELD_RC0_UNPROVEN_CLAIMS.md).
+> The protocol below stays canonical for observer-present runs; the harness mirrors it for
+> remote runs.
+
 ## Pre-flight (observer alone, 10 min before the player arrives)
 
 - Open [https://mindfield.mindkampf.ru](https://mindfield.mindkampf.ru) in a fresh browser

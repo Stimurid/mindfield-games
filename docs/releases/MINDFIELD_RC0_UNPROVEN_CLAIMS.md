@@ -224,6 +224,42 @@ performing in their own words, without referring to the genome.
 
 ---
 
+## Evidence harness for remote players (Phase 18)
+
+For all 8 claims above, the in-product harness at `/playtest/full-cycle` is the **minimum
+substrate** for remote evidence collection. A remote run produces:
+
+- a `PlaytestRun` row (mode, started_at, completed_at, final_verdict ∈ {software_only,
+  profile_recognition, replay_targeting, transfer_candidate, unclear}, session_ids,
+  selected_entry_id);
+- one or more `ReflectionEvent` rows per stage ∈ {after_triage, after_game_1,
+  after_profile, after_replay, final};
+- one `FollowUp24h` row with an unguessable token, a due_at 24h after start, and the 6
+  follow-up answers when submitted.
+
+**Backend traces (sessions, moves, interventions) alone are insufficient.** They prove
+that the player executed actions; they do NOT prove that the player understood the action,
+felt the profile as specific, perceived the replay as targeted, or noticed anything
+outside the app. Each unproven claim above maps to harness fields:
+
+| Claim | Harness field |
+|---|---|
+| C1 — psychotechnical function | `final` reflection + 24h `remembered_operation` |
+| C2 — transfer outside app | 24h `outside_app_example` + `appeared_spontaneously` |
+| C3 — replay improves the player | `after_replay` reflection ("targeted or just new text?") |
+| C4 — draft genome playability | not in this harness — needs separate flow |
+| C5 — triage fate quality at scale | `after_triage` reflection |
+| C6 — LLM role stability long-form | `after_game_1` reflection ("game-organ, assistant, or noise") |
+| C7 — Operator Profile usefulness | `after_profile` reflection ("specific or generic, quote the phrase") |
+| C8 — players know their action | `after_game_1` reflection ("what did you think you were doing") |
+
+Remote evidence is COUNTED only when a `PlaytestRun` has:
+- reflections at 5 stages (after_triage / after_game_1 / after_profile / after_replay / final),
+- `completed_at` set with a final_verdict,
+- a 24h `FollowUp24h` row with `completed_at` and at least `transfer_seen` filled.
+
+`/api/playtests/{id}/export` produces a one-file Markdown of the entire run + follow-up.
+
 ## Summary
 
 | Claim | Code-side evidence | Smoke evidence | Playtest evidence |

@@ -14,6 +14,8 @@ import Admin from "./routes/Admin";
 import Debug from "./routes/Debug";
 import Research from "./routes/Research";
 import ResearchHypothesis from "./routes/ResearchHypothesis";
+import PlaytestFullCycle from "./routes/PlaytestFullCycle";
+import PlaytestFollowup from "./routes/PlaytestFollowup";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -33,6 +35,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/debug/session/:sessionId" element={<Debug />} />
         <Route path="/research" element={<Research />} />
         <Route path="/research/hypotheses/:id" element={<ResearchHypothesis />} />
+        <Route path="/playtest/full-cycle" element={<PlaytestFullCycle />} />
+        <Route path="/playtest/followup/:token" element={<PlaytestFollowup />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,
