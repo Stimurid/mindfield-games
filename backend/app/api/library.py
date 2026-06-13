@@ -49,6 +49,9 @@ def list_entries(
     db: Session = Depends(get_db),
     kind: str | None = None,
     pass_filter: str | None = Query(None, alias="pass"),
+    maturity: int | None = Query(None, ge=0, le=5, description="exact maturity stage"),
+    maturity_min: int | None = Query(None, ge=0, le=5),
+    maturity_max: int | None = Query(None, ge=0, le=5),
     limit: int = 500,
 ):
     q = db.query(CorpusEntry)
@@ -56,6 +59,13 @@ def list_entries(
         q = q.filter(CorpusEntry.kind == kind)
     if pass_filter:
         q = q.filter(CorpusEntry.source_pass == pass_filter)
+    if maturity is not None:
+        q = q.filter(CorpusEntry.maturity_stage == maturity)
+    else:
+        if maturity_min is not None:
+            q = q.filter(CorpusEntry.maturity_stage >= maturity_min)
+        if maturity_max is not None:
+            q = q.filter(CorpusEntry.maturity_stage <= maturity_max)
     rows = q.order_by(CorpusEntry.kind, CorpusEntry.order_key, CorpusEntry.code).limit(limit).all()
     return [
         {
@@ -65,9 +75,27 @@ def list_entries(
             "title": e.title,
             "source_pass": e.source_pass,
             "source_line": e.source_line,
+            "maturity_stage": e.maturity_stage,
         }
         for e in rows
     ]
+
+
+class MaturityPatch(BaseModel):
+    maturity_stage: int
+
+
+@router.patch("/entries/{entry_id}/maturity")
+def patch_maturity(entry_id: str, payload: MaturityPatch, db: Session = Depends(get_db)):
+    e = db.query(CorpusEntry).filter(CorpusEntry.id == entry_id).first()
+    if not e:
+        raise HTTPException(404, "no such corpus entry")
+    if payload.maturity_stage < 0 or payload.maturity_stage > 5:
+        raise HTTPException(400, "maturity_stage must be in 0..5")
+    e.maturity_stage = payload.maturity_stage
+    db.commit()
+    db.refresh(e)
+    return {"id": e.id, "maturity_stage": e.maturity_stage}
 
 
 @router.get("/entries/{entry_id}")
@@ -95,6 +123,7 @@ def get_entry(entry_id: str, db: Session = Depends(get_db)):
         "body_md": e.body_md,
         "source_pass": e.source_pass,
         "source_line": e.source_line,
+        "maturity_stage": e.maturity_stage,
         "parents":  [{"id": p[0].id, "code": p[0].code, "title": p[0].title, "relation": p[1]} for p in parents],
         "children": [{"id": c[0].id, "code": c[0].code, "title": c[0].title, "relation": c[1]} for c in children],
     }

@@ -69,8 +69,19 @@ export const api = {
     }>),
   librarySections: () =>
     fetch(`${BASE}/api/library/sections`).then(j<{ kind: string; label: string; count: number }[]>),
-  libraryEntries: (kind?: string) =>
-    fetch(`${BASE}/api/library/entries${kind ? `?kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; source_pass: string; source_line: number | null }[]>),
+  libraryEntries: (kind?: string, maturity?: number) => {
+    const params = new URLSearchParams();
+    if (kind) params.set("kind", kind);
+    if (maturity !== undefined) params.set("maturity", String(maturity));
+    const qs = params.toString();
+    return fetch(`${BASE}/api/library/entries${qs ? "?" + qs : ""}`).then(j<{ id: string; code: string; kind: string; title: string; source_pass: string; source_line: number | null; maturity_stage: number | null }[]>);
+  },
+  patchMaturity: (entryId: string, maturity_stage: number) =>
+    fetch(`${BASE}/api/library/entries/${entryId}/maturity`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ maturity_stage }),
+    }).then(j<{ id: string; maturity_stage: number }>),
   libraryEntry: (id: string) =>
     fetch(`${BASE}/api/library/entries/${id}`).then(j<{ id: string; code: string; kind: string; title: string; body_md: string; source_pass: string; source_line: number | null; parents: any[]; children: any[] }>),
   configBanks: () =>
@@ -113,6 +124,23 @@ export const api = {
     fetch(`${BASE}/api/triage/queue?kind=${kind}&limit=${limit}`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<{ id: string; code: string; title: string; kind: string; body_md: string }[]>),
   triageStats: (mine = true) =>
     fetch(`${BASE}/api/triage/stats?mine=${mine}`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<{ total_verdicts: number; by_fate: { fate: string; label: string; count: number }[]; extracted_organs: number }>),
+  // Admin
+  adminListMaterials: () =>
+    fetch(`${BASE}/api/admin/materials`).then(j<any[]>),
+  adminCreateMaterial: (payload: any) =>
+    fetch(`${BASE}/api/admin/materials`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  adminUpdateMaterial: (id: string, payload: any) =>
+    fetch(`${BASE}/api/admin/materials/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  adminDeleteMaterial: (id: string) =>
+    fetch(`${BASE}/api/admin/materials/${id}`, { method: "DELETE" }).then(j<{ deleted: string }>),
   librarySearch: (q: string, kind?: string) =>
     fetch(`${BASE}/api/library/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; snippet: string }[]>),
   libraryComments: (entryId: string) =>

@@ -126,6 +126,7 @@ class CorpusEntry(Base):
     source_pass = Column(String, default="v0.2")
     source_line = Column(Integer, nullable=True)
     order_key = Column(Integer, default=0)
+    maturity_stage = Column(Integer, nullable=True)  # 0..5 per §3 'Стадии зрелости'
     created_at = Column(DateTime, default=_now)
 
 

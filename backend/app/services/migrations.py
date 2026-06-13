@@ -15,6 +15,7 @@ _MIGRATIONS: list[tuple[str, str, str]] = [
     ("materials", "source_session_id", "source_session_id TEXT"),
     ("materials", "source_corpus_id", "source_corpus_id TEXT"),
     ("sessions",  "player_token",     "player_token TEXT"),
+    ("corpus_entries", "maturity_stage", "maturity_stage INTEGER"),
 ]
 
 

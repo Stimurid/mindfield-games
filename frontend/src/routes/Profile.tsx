@@ -49,6 +49,7 @@ export default function Profile() {
       <div className="header">
         <Link to="/">← все игры</Link>
         <button onClick={downloadMd}>Скачать .md</button>
+        <Link to={`/debug/session/${session.id}`} className="kbd" style={{ textDecoration: "none", opacity: 0.6, fontSize: 11 }}>debug raw</Link>
       </div>
       <h2>Operator Profile <span className="muted" style={{ fontSize: 14 }}>· {session.game_id}</span></h2>
       <div className="card">

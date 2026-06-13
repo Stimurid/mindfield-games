@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import TriagePanel from "../components/TriagePanel";
+import MaturityBadge from "../components/MaturityBadge";
 
 // Minimal markdown renderer — enough for body text from spec.md and phase docs.
 // No external deps; safe-by-default escaping then a few transforms.
@@ -134,6 +135,20 @@ export default function LibraryEntry() {
       <div className="header">
         <Link to={`/library/section/${entry.kind}`}>← раздел</Link>
         <span className="muted">{entry.code} · {entry.source_pass}{entry.source_line ? ` · L${entry.source_line}` : ""}</span>
+        <MaturityBadge stage={entry.maturity_stage} />
+        <select
+          value={entry.maturity_stage ?? ""}
+          onChange={async e => {
+            const v = parseInt(e.target.value);
+            if (Number.isNaN(v)) return;
+            await api.patchMaturity(entry.id, v);
+            setEntry({ ...entry, maturity_stage: v });
+          }}
+          style={{ width: "auto", fontSize: 11 }}
+          title="изменить стадию зрелости"
+        >
+          {[0,1,2,3,4,5].map(s => <option key={s} value={s}>стадия {s}</option>)}
+        </select>
       </div>
       <h2>{entry.title}</h2>
 

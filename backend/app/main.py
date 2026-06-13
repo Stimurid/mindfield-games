@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from .database import init_db, SessionLocal
 from .models import Material
 from .services.genome_loader import load_seed_materials, load_all_genomes
-from .api import games, sessions, materials, llm as llm_api, operator, library, configurator, triage
+from .api import games, sessions, materials, llm as llm_api, operator, library, configurator, triage, admin
 
 
 def seed_materials_if_empty():
@@ -53,6 +53,10 @@ def create_app() -> FastAPI:
         org_result = seed_organs_if_empty()
         if org_result.get("added"):
             print(f"[organs] seeded {org_result['added']} canonical organs (total {org_result.get('total')})")
+        from .services.maturity import backfill_default_maturity
+        mat_result = backfill_default_maturity()
+        if mat_result.get("applied"):
+            print(f"[maturity] backfilled {mat_result['applied']} corpus entries")
 
     app.include_router(games.router)
     app.include_router(sessions.router)
@@ -62,6 +66,7 @@ def create_app() -> FastAPI:
     app.include_router(library.router)
     app.include_router(configurator.router)
     app.include_router(triage.router)
+    app.include_router(admin.router)
 
     @app.get("/api/health")
     def health():

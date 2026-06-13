@@ -20,6 +20,7 @@ export default function Home() {
           <Link to="/triage" className="kbd" style={{ textDecoration: "none" }}>Triage →</Link>
           <Link to="/configurator" className="kbd" style={{ textDecoration: "none" }}>Configurator →</Link>
           <Link to="/operator" className="kbd" style={{ textDecoration: "none" }}>Operator Profile →</Link>
+          <Link to="/admin/materials" className="kbd" style={{ textDecoration: "none", opacity: 0.6 }}>Admin</Link>
         </div>
       </div>
 
