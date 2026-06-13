@@ -19,6 +19,8 @@ COPY app ./app
 COPY game_genomes ./game_genomes
 COPY seed_materials ./seed_materials
 COPY seed_materials_real ./seed_materials_real
+# Library corpus + phase docs are bind-mounted at runtime from
+# /opt/mindfield/repo/docs into /docs (see deploy/docker-compose.yml).
 
 # /data is bind-mounted from /opt/mindfield/data on the host so SQLite
 # survives container restarts. Created here so first boot does not race.

@@ -24,6 +24,7 @@ services:
       MINDFIELD_DB: /data/mindfield.db
     volumes:
       - /opt/mindfield/data:/data
+      - /opt/mindfield/repo/docs:/docs:ro
     networks:
       - moderbober_default
 

@@ -15,7 +15,10 @@ export default function Home() {
     <div className="app">
       <div className="header">
         <h1>Mindfield Games <span className="muted">— Operator Calibration Pack</span></h1>
-        <Link to="/operator" className="kbd" style={{ textDecoration: "none" }}>Operator Profile →</Link>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link to="/library" className="kbd" style={{ textDecoration: "none" }}>Library →</Link>
+          <Link to="/operator" className="kbd" style={{ textDecoration: "none" }}>Operator Profile →</Link>
+        </div>
       </div>
 
       <p className="muted">

@@ -57,6 +57,38 @@ class PlayerMove(Base):
     session = relationship("GameSession", back_populates="moves")
 
 
+class CorpusEntry(Base):
+    """A node in the Mindfield corpus library.
+
+    Top-level pass ingests: attractors v0.1 + v0.2, R-roots, breeds,
+    pre-cards, residuals, chimeras, genomes, app-specs, and our own
+    phase docs as kind='phase_doc'. Small cards (4200+) come in a
+    later pass.
+    """
+    __tablename__ = "corpus_entries"
+    id = Column(String, primary_key=True, default=_uuid)
+    kind = Column(String, index=True, nullable=False)
+    # Stable user-visible code, e.g. "A01", "R3", "breed_05", "chimera_v2_12"
+    code = Column(String, index=True, nullable=False)
+    title = Column(String, nullable=False)
+    body_md = Column(String, nullable=False)
+    source_pass = Column(String, default="v0.2")
+    source_line = Column(Integer, nullable=True)
+    order_key = Column(Integer, default=0)
+    created_at = Column(DateTime, default=_now)
+
+
+class CorpusLink(Base):
+    """Directed link between corpus entries. relation = derived_from |
+    chimera_cross | refined | discussed_in.
+    """
+    __tablename__ = "corpus_links"
+    id = Column(String, primary_key=True, default=_uuid)
+    parent_id = Column(String, ForeignKey("corpus_entries.id"), index=True, nullable=False)
+    child_id  = Column(String, ForeignKey("corpus_entries.id"), index=True, nullable=False)
+    relation = Column(String, default="derived_from")
+
+
 class LLMIntervention(Base):
     __tablename__ = "interventions"
     id = Column(String, primary_key=True, default=_uuid)

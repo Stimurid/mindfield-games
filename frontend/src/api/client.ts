@@ -67,6 +67,14 @@ export const api = {
       cross_patterns: string[];
       verdict: string;
     }>),
+  librarySections: () =>
+    fetch(`${BASE}/api/library/sections`).then(j<{ kind: string; label: string; count: number }[]>),
+  libraryEntries: (kind?: string) =>
+    fetch(`${BASE}/api/library/entries${kind ? `?kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; source_pass: string; source_line: number | null }[]>),
+  libraryEntry: (id: string) =>
+    fetch(`${BASE}/api/library/entries/${id}`).then(j<{ id: string; code: string; kind: string; title: string; body_md: string; source_pass: string; source_line: number | null; parents: any[]; children: any[] }>),
+  librarySearch: (q: string, kind?: string) =>
+    fetch(`${BASE}/api/library/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; snippet: string }[]>),
   complete: (sid: string) =>
     fetch(`${BASE}/api/sessions/${sid}/complete`, { method: "POST" }).then(j<GameSession>),
   exportMd: (sid: string) =>
