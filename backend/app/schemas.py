@@ -70,6 +70,10 @@ class InterventionRequest(BaseModel):
     model: Optional[str] = None
 
 
+class ReplayRequest(BaseModel):
+    model: Optional[str] = None
+
+
 class InterventionOut(BaseModel):
     id: str
     role: str

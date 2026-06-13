@@ -22,4 +22,14 @@ def get_material(material_id: str, db: Session = Depends(get_db)):
     m = db.query(Material).filter(Material.id == material_id).first()
     if not m:
         raise HTTPException(404, "no material")
-    return {"id": m.id, "game_id": m.game_id, "title": m.title, "namespace": m.namespace, "payload": m.payload}
+    return {
+        "id": m.id,
+        "game_id": m.game_id,
+        "title": m.title,
+        "namespace": m.namespace,
+        "payload": m.payload,
+        "parent_id": m.parent_id,
+        "mutation_directive": m.mutation_directive,
+        "source_session_id": m.source_session_id,
+        "source_corpus_id": m.source_corpus_id,
+    }

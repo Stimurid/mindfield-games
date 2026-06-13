@@ -44,6 +44,7 @@ _ROLE_SHAPE: dict[str, dict[str, type]] = {
     "spackler":        {"patch": str, "risk": str},
     "sprout_advocate": {"counterposition": str, "pressure_question": str},
     "literal_alien":   {"literal_reading": str, "things_i_cannot_see": list},
+    "material_mutator":{"new_title": str, "new_payload": dict},
 }
 
 _NON_ASSISTANT_FOOTER = (
@@ -150,6 +151,61 @@ class MockProvider(LLMProvider):
                 ],
             }
 
+        if role == "material_mutator":
+            field_type = context.get("field_type", "")
+            prev = context.get("previous_payload", {}) or {}
+            directive = context.get("directive", "")
+            tag = f"mutated[{directive[:40]}]"
+            if field_type == "clickable_text_units":
+                new_payload = {
+                    "type": "clickable_text_units",
+                    "intro": f"{tag} {prev.get('intro', '')}",
+                    "units": [
+                        {"id": f"m{i}", "index": i, "text": f"{tag} unit {i}", "dev_role": "pseudo_depth"}
+                        for i in range(12)
+                    ],
+                }
+            elif field_type == "gap_click_text":
+                blocks = [{"id": f"mb{i}", "index": i, "text": f"{tag} block {i}"} for i in range(5)]
+                gaps = [
+                    {"id": f"mg{i}", "index": i, "between": [f"mb{i}", f"mb{i+1}"],
+                     "dev_absence": "subject", "dev_note": "mock"}
+                    for i in range(4)
+                ]
+                new_payload = {"type": "gap_click_text", "intro": tag, "blocks": blocks, "gaps": gaps}
+            elif field_type == "card_sorting":
+                new_payload = {
+                    "type": "card_sorting",
+                    "intro": tag,
+                    "zones": prev.get("zones") or [
+                        {"id": "cut", "label": "Cut", "hint": ""},
+                        {"id": "incubate", "label": "Incubate", "hint": ""},
+                        {"id": "require_proof", "label": "Require proof", "hint": ""},
+                        {"id": "no_name", "label": "No name", "hint": ""},
+                    ],
+                    "cards": [{"id": f"mc{i}", "text": f"{tag} card {i}", "dev_kind": "explicit_slop"} for i in range(20)],
+                }
+            elif field_type == "medium_shift_phrase":
+                new_payload = {
+                    "type": "medium_shift_phrase",
+                    "intro": tag,
+                    "phrase": prev.get("phrase") or "тест?",
+                    "variants": [
+                        {"id": f"mv{i}", "medium": prev.get("variants", [{}])[i % max(len(prev.get("variants", [])), 1)].get("medium", "talk"),
+                         "context": f"{tag} ctx {i}", "dev_action": "hidden_request", "dev_note": "mock"}
+                        for i in range(5)
+                    ],
+                    "alt_phrase": prev.get("alt_phrase") or "",
+                }
+            else:
+                new_payload = {"type": field_type, "intro": tag}
+            return {
+                "_role": role,
+                "_prompt_spec": spec,
+                "new_title": f"[mock-mutated] {directive[:60]}",
+                "new_payload": new_payload,
+            }
+
         raise ValueError(f"unsupported role {role}")
 
 
@@ -182,7 +238,7 @@ class OpenAICompatibleProvider(LLMProvider):
             ],
             "response_format": {"type": "json_object"},
             "temperature": 0.7,
-            "max_tokens": 600,
+            "max_tokens": 3500 if role == "material_mutator" else 600,
         }
         req = urllib.request.Request(
             f"{self.base_url}/chat/completions",

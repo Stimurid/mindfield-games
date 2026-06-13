@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import type { GameSession } from "../types";
 
 export default function Profile() {
   const { sessionId } = useParams<{ sessionId: string }>();
+  const nav = useNavigate();
   const [session, setSession] = useState<GameSession | null>(null);
   const [md, setMd] = useState<string>("");
+  const [replaying, setReplaying] = useState(false);
+  const [replayErr, setReplayErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -16,6 +19,20 @@ export default function Profile() {
 
   if (!session) return <div className="app"><div className="muted">Loading…</div></div>;
   const profile = session.trace_profile ?? {};
+
+  async function startReplay() {
+    if (!session) return;
+    setReplaying(true);
+    setReplayErr(null);
+    try {
+      const r = await api.replay(session.id);
+      nav(`/play/${session.game_id}?materialId=${r.new_material_id}`);
+    } catch (e: any) {
+      setReplayErr(String(e?.message ?? e));
+    } finally {
+      setReplaying(false);
+    }
+  }
 
   function downloadMd() {
     const blob = new Blob([md], { type: "text/markdown" });
@@ -56,6 +73,15 @@ export default function Profile() {
             {profile.replay_directives.map((d: string, i: number) => (
               <div key={i} style={{ marginTop: 4, fontSize: 13 }}>→ {d}</div>
             ))}
+            <button
+              className="primary"
+              onClick={startReplay}
+              disabled={replaying}
+              style={{ marginTop: 12 }}
+            >
+              {replaying ? "Мутирую материал…" : "Сыграть мутировавший раунд"}
+            </button>
+            {replayErr && <div style={{ color: "var(--warn)", fontSize: 12, marginTop: 6 }}>{replayErr}</div>}
           </div>
         )}
       </div>

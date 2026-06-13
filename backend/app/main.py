@@ -39,6 +39,10 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     def startup():
         init_db()
+        from .services.migrations import run_migrations
+        applied = run_migrations()
+        if applied:
+            print(f"[migrations] applied: {applied}")
         load_all_genomes()
         seed_materials_if_empty()
 

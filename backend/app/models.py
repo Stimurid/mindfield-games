@@ -19,8 +19,12 @@ class Material(Base):
     id = Column(String, primary_key=True, default=_uuid)
     game_id = Column(String, index=True, nullable=False)
     title = Column(String, nullable=False)
-    namespace = Column(String, default="demo", index=True)  # "demo" | "real"
+    namespace = Column(String, default="demo", index=True)  # "demo" | "real" | "mutated" | "from_corpus"
     payload = Column(JSON, nullable=False)  # raw seed (text blocks, cards, phrase variants)
+    parent_id = Column(String, ForeignKey("materials.id"), nullable=True, index=True)
+    mutation_directive = Column(String, nullable=True)
+    source_session_id = Column(String, ForeignKey("sessions.id"), nullable=True)
+    source_corpus_id = Column(String, nullable=True, index=True)  # set in Phase 9
     created_at = Column(DateTime, default=_now)
 
 
@@ -30,6 +34,7 @@ class GameSession(Base):
     game_id = Column(String, index=True, nullable=False)
     material_id = Column(String, ForeignKey("materials.id"), nullable=False)
     status = Column(String, default="created")  # created | in_progress | completed
+    player_token = Column(String, nullable=True, index=True)  # cookie-bound, set in Phase 6
     current_round_id = Column(String, nullable=True)
     trace_profile = Column(JSON, nullable=True)
     started_at = Column(DateTime, default=_now)

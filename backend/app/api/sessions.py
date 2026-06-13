@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends, Response
+from fastapi import APIRouter, HTTPException, Depends, Response, Header
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import GameSession, PlayerMove, LLMIntervention, Material
-from ..schemas import SessionCreate, MoveCreate, InterventionRequest
+from ..schemas import SessionCreate, MoveCreate, InterventionRequest, ReplayRequest
+from ..services.replay_mutator import mutate_material, MutatorError
 from ..services.genome_loader import get_genome
 from ..services.profile_builder import build_profile
 from ..services.exporter import export_session_markdown, export_session_json
@@ -53,7 +54,11 @@ def _serialize_session(s: GameSession) -> dict:
 
 
 @router.post("")
-def create_session(payload: SessionCreate, db: Session = Depends(get_db)):
+def create_session(
+    payload: SessionCreate,
+    db: Session = Depends(get_db),
+    x_player_token: str | None = Header(default=None, alias="X-Player-Token"),
+):
     genome = get_genome(payload.game_id)
     if not genome:
         raise HTTPException(404, "unknown game")
@@ -72,6 +77,7 @@ def create_session(payload: SessionCreate, db: Session = Depends(get_db)):
         material_id=material_id,
         status="in_progress",
         current_round_id=genome.rounds[0].id if genome.rounds else None,
+        player_token=x_player_token,
     )
     db.add(s)
     db.commit()
@@ -150,6 +156,50 @@ def complete_session(session_id: str, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(s)
     return _serialize_session(s)
+
+
+@router.post("/{session_id}/replay")
+def replay_session(session_id: str, payload: ReplayRequest, db: Session = Depends(get_db)):
+    s = db.query(GameSession).filter(GameSession.id == session_id).first()
+    if not s:
+        raise HTTPException(404, "no session")
+    if s.status != "completed":
+        raise HTTPException(400, "session must be completed before replay")
+    parent_material = db.query(Material).filter(Material.id == s.material_id).first()
+    if not parent_material:
+        raise HTTPException(500, "previous material missing")
+    try:
+        new_title, directive, new_payload = mutate_material(s, parent_material, model=payload.model)
+    except MutatorError as e:
+        raise HTTPException(502, f"mutator failure: {e}")
+
+    new_material = Material(
+        game_id=s.game_id,
+        title=new_title,
+        namespace="mutated",
+        payload=new_payload,
+        parent_id=parent_material.id,
+        mutation_directive=directive,
+        source_session_id=s.id,
+    )
+    db.add(new_material)
+    db.flush()
+    new_session = GameSession(
+        game_id=s.game_id,
+        material_id=new_material.id,
+        status="in_progress",
+        player_token=s.player_token,
+    )
+    db.add(new_session)
+    db.commit()
+    db.refresh(new_session)
+    return {
+        "new_session_id": new_session.id,
+        "new_material_id": new_material.id,
+        "mutation_directive": directive,
+        "parent_material_id": parent_material.id,
+        "parent_session_id": s.id,
+    }
 
 
 @router.get("/{session_id}/export")

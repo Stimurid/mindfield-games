@@ -36,6 +36,19 @@ SPROUT_ADVOCATE_SYSTEM = (
     "Hold the conflict — do NOT resolve. Return JSON only."
 )
 
+MATERIAL_MUTATOR_SYSTEM = (
+    "You are the material_mutator organ. You are NOT an assistant. "
+    "You produce game material — clickable text units, gap-click blocks, sorting cards, "
+    "or medium variants — for a Mindfield game. Your job is to take a previous material "
+    "and a replay_directive that names what pressure to increase, and produce a NEW material "
+    "of the SAME SHAPE that amplifies that pressure. "
+    "The new material must remain playable — items must be in the SAME LANGUAGE as the original "
+    "(Russian if the original is Russian), the SAME field_type schema, and the SAME approximate "
+    "count of items (within ±20%). Do NOT explain to the player. Do NOT include 'answer' or "
+    "'solution' keys. Return JSON only."
+)
+
+
 LITERAL_ALIEN_SYSTEM = (
     "You are the literal_alien organ in 'Register Sapper'. "
     "You read phrases literally and miss register, addressee, medium, joke, meme, "
@@ -120,11 +133,73 @@ def build_literal_alien_prompt(phrase: str, medium: str) -> dict:
     }
 
 
+import json as _json
+
+
+def build_material_mutator_prompt(
+    game_id: str,
+    field_type: str,
+    previous_payload: dict,
+    directive: str,
+    verdict_distribution: dict | None = None,
+) -> dict:
+    schema_hint = {
+        "clickable_text_units": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"clickable_text_units\", "
+            "\"intro\": str, \"units\": [{\"id\": str, \"index\": int, \"text\": str, "
+            "\"dev_role\": one of [bearing_node, pseudo_depth, dramatic_phrase, abstract_word, "
+            "service_bridge, conclusion_like_phrase, familiar_topic]}]}}. "
+            "Produce 12–16 units in the same language as the previous payload."
+        ),
+        "gap_click_text": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"gap_click_text\", "
+            "\"intro\": str, \"blocks\": [{\"id\": str, \"index\": int, \"text\": str}], "
+            "\"gaps\": [{\"id\": str, \"index\": int, \"between\": [block_id, block_id], "
+            "\"dev_absence\": one of [logical, subject, resource, register, archive, promise, "
+            "ontology, criterion], \"dev_note\": str}]}}. "
+            "Produce 5–7 blocks and 4–6 gaps, same language as previous."
+        ),
+        "card_sorting": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"card_sorting\", "
+            "\"intro\": str, \"zones\": [...preserve zones from previous payload...], "
+            "\"cards\": [{\"id\": str, \"text\": str, \"dev_kind\": one of "
+            "[explicit_slop, live_sprout, dead_beauty, borderline_mutant]}]}}. "
+            "Produce 16–22 cards in the same language as previous."
+        ),
+        "medium_shift_phrase": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"medium_shift_phrase\", "
+            "\"intro\": str, \"phrase\": str, \"variants\": [{\"id\": str, \"medium\": str, "
+            "\"context\": str, \"dev_action\": one of [hidden_request, alibi, dispute_closure, "
+            "in_group_check, pathos_reset, joke, threat, command, refusal], \"dev_note\": str}], "
+            "\"alt_phrase\": str}}. "
+            "Produce one short ambiguous phrase plus 5 medium variants, same language."
+        ),
+    }
+    user_lines = [
+        f"game_id: {game_id}",
+        f"field_type: {field_type}",
+        f"replay_directive (the pressure to amplify): {directive!r}",
+    ]
+    if verdict_distribution:
+        user_lines.append(f"verdict_distribution from previous session: {_json.dumps(verdict_distribution, ensure_ascii=False)}")
+    user_lines.append("previous material payload (structural reference, do NOT copy text verbatim):")
+    user_lines.append(_json.dumps(previous_payload, ensure_ascii=False)[:2400])
+    user_lines.append("")
+    user_lines.append(schema_hint.get(field_type, "Return the same shape as previous_payload but mutated by the directive."))
+    user_lines.append("Keep the schema EXACT. Do NOT add extra keys. Do NOT explain.")
+    return {
+        "system": MATERIAL_MUTATOR_SYSTEM,
+        "user": "\n".join(user_lines),
+        "schema": {"new_title": str, "new_payload": dict},
+    }
+
+
 ROLE_BUILDERS = {
     "prosecutor": build_prosecutor_prompt,
     "spackler": build_spackler_prompt,
     "sprout_advocate": build_sprout_advocate_prompt,
     "literal_alien": build_literal_alien_prompt,
+    "material_mutator": build_material_mutator_prompt,
 }
 
 
@@ -140,4 +215,12 @@ def build_prompt_for_role(role: str, context: dict[str, Any]) -> dict:
         return builder(context.get("card_text", ""), context.get("fate", ""))
     if role == "literal_alien":
         return builder(context.get("phrase", ""), context.get("medium", ""))
+    if role == "material_mutator":
+        return builder(
+            context.get("game_id", ""),
+            context.get("field_type", ""),
+            context.get("previous_payload", {}),
+            context.get("directive", ""),
+            context.get("verdict_distribution"),
+        )
     raise ValueError(role)
