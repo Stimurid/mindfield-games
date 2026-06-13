@@ -48,15 +48,24 @@ fi
 AFTER=$(git rev-parse --short HEAD 2>/dev/null || echo none)
 log "  after  : ${AFTER}"
 
-# 2. Build & recreate containers (compose will rebuild only what changed)
-log "Step 2: docker compose up -d --build"
+# 2. Sync canonical files from repo into ROOT (compose, bin scripts).
+log "Step 2: sync canonical files"
+if ! $DRY; then
+  cp "${REPO_DIR}/deploy/docker-compose.yml" "$ROOT/"
+  install -m 750 "${REPO_DIR}/deploy/bin/deploy" "$ROOT/bin/"
+  install -m 750 "${REPO_DIR}/deploy/bin/status" "$ROOT/bin/"
+  install -m 750 "${REPO_DIR}/deploy/bin/backup" "$ROOT/bin/"
+fi
+
+# 3. Build & recreate containers (compose will rebuild only what changed)
+log "Step 3: docker compose up -d --build"
 if ! $DRY; then
   cd "$ROOT"
   docker compose up -d --build 2>&1 | tail -20
 fi
 
-# 3. Healthchecks
-log "Step 3: healthchecks"
+# 4. Healthchecks
+log "Step 4: healthchecks"
 sleep 4
 
 # Local API check via the api container directly
@@ -85,8 +94,8 @@ else
   log "  edge WARN : ${EDGE} — Caddy block may be missing for ${DOMAIN}"
 fi
 
-# 4. Provider sanity — verify backend can hit 302.ai with the env_file key
-log "Step 4: provider sanity (no tokens consumed for game list)"
+# 5. Provider sanity — verify backend can hit 302.ai with the env_file key
+log "Step 5: provider sanity (no tokens consumed for game list)"
 PROV=$(docker exec "${API_C}" curl -sf http://localhost:8000/api/llm/models 2>/dev/null | head -c 400 || echo fail)
 log "  /api/llm/models : ${PROV}"
 
