@@ -16,6 +16,10 @@ _MIGRATIONS: list[tuple[str, str, str]] = [
     ("materials", "source_corpus_id", "source_corpus_id TEXT"),
     ("sessions",  "player_token",     "player_token TEXT"),
     ("corpus_entries", "maturity_stage", "maturity_stage INTEGER"),
+    ("genome_drafts", "field_type",              "field_type TEXT"),
+    ("genome_drafts", "promoted",                "promoted TEXT DEFAULT 'no'"),
+    ("genome_drafts", "promoted_genome",         "promoted_genome JSON"),
+    ("genome_drafts", "source_seed_material_id", "source_seed_material_id TEXT"),
 ]
 
 

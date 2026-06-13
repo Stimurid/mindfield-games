@@ -12,6 +12,8 @@ import Configurator from "./routes/Configurator";
 import Triage from "./routes/Triage";
 import Admin from "./routes/Admin";
 import Debug from "./routes/Debug";
+import Research from "./routes/Research";
+import ResearchHypothesis from "./routes/ResearchHypothesis";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -29,6 +31,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/triage" element={<Triage />} />
         <Route path="/admin/materials" element={<Admin />} />
         <Route path="/debug/session/:sessionId" element={<Debug />} />
+        <Route path="/research" element={<Research />} />
+        <Route path="/research/hypotheses/:id" element={<ResearchHypothesis />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,

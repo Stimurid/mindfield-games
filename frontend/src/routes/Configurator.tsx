@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 
 type Bank = { bank: string; label: string; hint: string; count: number; is_degradation: boolean };
@@ -16,6 +16,9 @@ type Verdict = {
 const STAGE_LABEL = ["0 сырой фрагмент", "1 упражнение", "2 игра-упражнение", "3 психотехническая игра", "4 коэволюционный симулятор", "5 школа/платформа"];
 
 export default function Configurator() {
+  const nav = useNavigate();
+  const [fieldTypes, setFieldTypes] = useState<{ id: string; label: string }[]>([]);
+  const [promoteFieldType, setPromoteFieldType] = useState<string>("clickable_text_units");
   const [banks, setBanks] = useState<Bank[] | null>(null);
   const [organsByBank, setOrgansByBank] = useState<Record<string, Organ[]>>({});
   const [name, setName] = useState("");
@@ -39,6 +42,7 @@ export default function Configurator() {
       setOrgansByBank(map);
     }).catch(e => setErr(String(e?.message ?? e)));
     api.configListDrafts(true).then(setDrafts).catch(() => {});
+    api.configListFieldTypes().then(setFieldTypes).catch(() => {});
   }, []);
 
   function toggle(bank: string, organId: string) {
@@ -77,6 +81,23 @@ export default function Configurator() {
       }
       setDrafts(await api.configListDrafts(true));
       setVerdict(d.weaver_verdict ?? null);
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function promote() {
+    if (!currentDraftId) {
+      await saveDraft();
+      if (!currentDraftId) return;
+    }
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await api.configPromoteDraft(currentDraftId!, promoteFieldType);
+      nav(`/play/${r.promoted_game_id}`);
     } catch (e: any) {
       setErr(String(e?.message ?? e));
     } finally {
@@ -213,10 +234,21 @@ export default function Configurator() {
         );
       })}
 
-      <div className="actions-bar" style={{ marginTop: 12 }}>
+      <div className="actions-bar" style={{ marginTop: 12, flexWrap: "wrap" }}>
         <button onClick={saveDraft} disabled={busy}>{currentDraftId ? "Сохранить" : "Создать черновик"}</button>
         <button className="primary" onClick={runWeaver} disabled={busy}>{busy ? "GameWeaver работает…" : "Прогнать через GameWeaver"}</button>
         {currentDraftId && <button onClick={resetForm}>Новый</button>}
+        {currentDraftId && (
+          <span style={{ display: "flex", gap: 6, alignItems: "center", marginLeft: 12 }}>
+            <span className="muted" style={{ fontSize: 12 }}>промотировать как:</span>
+            <select value={promoteFieldType} onChange={e => setPromoteFieldType(e.target.value)}>
+              {fieldTypes.map(ft => <option key={ft.id} value={ft.id}>{ft.label}</option>)}
+            </select>
+            <button onClick={promote} disabled={busy} style={{ background: "rgba(80,160,80,0.25)" }}>
+              Промотировать и сыграть
+            </button>
+          </span>
+        )}
       </div>
 
       {verdict && (

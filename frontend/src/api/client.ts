@@ -141,6 +141,42 @@ export const api = {
     }).then(j<any>),
   adminDeleteMaterial: (id: string) =>
     fetch(`${BASE}/api/admin/materials/${id}`, { method: "DELETE" }).then(j<{ deleted: string }>),
+  // Research
+  researchListHypotheses: (mine = true) =>
+    fetch(`${BASE}/api/research/hypotheses?mine=${mine}`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<any[]>),
+  researchGetHypothesis: (id: string) =>
+    fetch(`${BASE}/api/research/hypotheses/${id}`).then(j<any>),
+  researchCreateHypothesis: (payload: { title: string; body_md?: string; tags?: string[]; linked_draft_id?: string | null }) =>
+    fetch(`${BASE}/api/research/hypotheses`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  researchPatchHypothesis: (id: string, payload: any) =>
+    fetch(`${BASE}/api/research/hypotheses/${id}`, {
+      method: "PATCH",
+      headers: tokHeaders(),
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  researchDeleteHypothesis: (id: string) =>
+    fetch(`${BASE}/api/research/hypotheses/${id}`, { method: "DELETE" }).then(j<{ deleted: string }>),
+  researchDiscussions: (id: string) =>
+    fetch(`${BASE}/api/research/hypotheses/${id}/discussions`).then(j<any[]>),
+  researchSummon: (id: string, role: string, angle?: string, model?: string) =>
+    fetch(`${BASE}/api/research/hypotheses/${id}/summon`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify({ role, angle, model }),
+    }).then(j<any>),
+  // Configurator promotion
+  configListFieldTypes: () =>
+    fetch(`${BASE}/api/configurator/field-types`).then(j<{ id: string; label: string }[]>),
+  configPromoteDraft: (id: string, field_type: string, source_seed_material_id?: string) =>
+    fetch(`${BASE}/api/configurator/drafts/${id}/promote`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify({ field_type, source_seed_material_id }),
+    }).then(j<{ draft_id: string; promoted_game_id: string; field_type: string; source_seed_material_id: string | null }>),
   librarySearch: (q: string, kind?: string) =>
     fetch(`${BASE}/api/library/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; snippet: string }[]>),
   libraryComments: (entryId: string) =>

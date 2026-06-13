@@ -6,6 +6,7 @@ from ..database import get_db
 from ..models import Organ, GenomeDraft
 from ..llm.provider import get_provider
 from ..services.organ_seed import BANK_LABEL, BANK_HINT
+from ..services.genome_promote import promote_draft, PromoteError, VALID_FIELD_TYPES
 
 router = APIRouter(prefix="/api/configurator", tags=["configurator"])
 
@@ -151,6 +152,42 @@ def run_weaver(
     db.commit()
     db.refresh(d)
     return {"draft": _serialize(d), "verdict": out}
+
+
+class PromoteRequest(BaseModel):
+    field_type: str
+    source_seed_material_id: Optional[str] = None
+
+
+@router.post("/drafts/{draft_id}/promote")
+def promote(draft_id: str, payload: PromoteRequest, db: Session = Depends(get_db)):
+    d = db.query(GenomeDraft).filter(GenomeDraft.id == draft_id).first()
+    if not d:
+        raise HTTPException(404, "no draft")
+    if payload.field_type not in VALID_FIELD_TYPES:
+        raise HTTPException(400, f"field_type must be one of {VALID_FIELD_TYPES}")
+    try:
+        genome = promote_draft(d, payload.field_type, db)
+    except PromoteError as e:
+        raise HTTPException(400, str(e))
+    d.field_type = payload.field_type
+    d.promoted_genome = genome
+    d.promoted = "yes"
+    if payload.source_seed_material_id:
+        d.source_seed_material_id = payload.source_seed_material_id
+    db.commit()
+    db.refresh(d)
+    return {
+        "draft_id": d.id,
+        "promoted_game_id": genome["id"],
+        "field_type": d.field_type,
+        "source_seed_material_id": d.source_seed_material_id,
+    }
+
+
+@router.get("/field-types")
+def list_field_types():
+    return [{"id": ft, "label": ft} for ft in VALID_FIELD_TYPES]
 
 
 def _resolve_organ_names(db: Session, selected: dict[str, list[str]]) -> dict[str, list[str]]:

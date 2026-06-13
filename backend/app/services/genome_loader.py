@@ -19,7 +19,56 @@ def load_all_genomes() -> dict[str, GameGenome]:
 
 
 def get_genome(game_id: str) -> GameGenome | None:
-    return load_all_genomes().get(game_id)
+    g = load_all_genomes().get(game_id)
+    if g:
+        return g
+    # Promoted draft? Resolve via DB. Imported here to avoid a circular import
+    # at module-load time.
+    if game_id.startswith("promoted_"):
+        from ..database import SessionLocal
+        from ..models import GenomeDraft
+        db = SessionLocal()
+        try:
+            draft_id = game_id.removeprefix("promoted_")
+            d = db.query(GenomeDraft).filter(GenomeDraft.id == draft_id).first()
+            if d and d.promoted == "yes" and d.promoted_genome:
+                return GameGenome(**d.promoted_genome)
+        finally:
+            db.close()
+    return None
+
+
+def list_runtime_genome_ids_from_db() -> list[str]:
+    """Promoted drafts that count as runtime games. Used by /api/games."""
+    from ..database import SessionLocal
+    from ..models import GenomeDraft
+    db = SessionLocal()
+    try:
+        rows = db.query(GenomeDraft).filter(GenomeDraft.promoted == "yes").all()
+        return [f"promoted_{d.id}" for d in rows]
+    finally:
+        db.close()
+
+
+def get_promoted_genome_summary(game_id: str) -> dict | None:
+    """For /api/games listing — return enough to render the game tile."""
+    if not game_id.startswith("promoted_"):
+        return None
+    from ..database import SessionLocal
+    from ..models import GenomeDraft
+    db = SessionLocal()
+    try:
+        draft_id = game_id.removeprefix("promoted_")
+        d = db.query(GenomeDraft).filter(GenomeDraft.id == draft_id).first()
+        if not d or d.promoted != "yes" or not d.promoted_genome:
+            return None
+        g = d.promoted_genome
+        return {
+            "id": g["id"], "title": g["title"], "short_title": g.get("short_title", g["title"]),
+            "function": g.get("function", ""),
+        }
+    finally:
+        db.close()
 
 
 def load_seed_materials() -> list[dict]:

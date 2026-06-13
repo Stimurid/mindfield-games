@@ -75,6 +75,35 @@ class Organ(Base):
     created_at = Column(DateTime, default=_now)
 
 
+class Hypothesis(Base):
+    """A researcher's hypothesis about an operation, a porода, or a player pattern.
+    The researcher can summon any of the 4 organ roles against it and accumulate
+    a discussion thread, then promote it into a game by linking it to a draft.
+    """
+    __tablename__ = "hypotheses"
+    id = Column(String, primary_key=True, default=_uuid)
+    title = Column(String, nullable=False)
+    body_md = Column(String, default="")
+    status = Column(String, default="draft")  # draft | published | abandoned
+    tags = Column(JSON, default=list)
+    player_token = Column(String, index=True, nullable=True)
+    linked_draft_id = Column(String, ForeignKey("genome_drafts.id"), nullable=True)
+    created_at = Column(DateTime, default=_now)
+    updated_at = Column(DateTime, default=_now, onupdate=_now)
+
+
+class HypothesisDiscussion(Base):
+    __tablename__ = "hypothesis_discussions"
+    id = Column(String, primary_key=True, default=_uuid)
+    hypothesis_id = Column(String, ForeignKey("hypotheses.id"), index=True, nullable=False)
+    role = Column(String, nullable=False)
+    angle = Column(String, nullable=True)
+    output = Column(JSON, nullable=False)
+    model = Column(String, nullable=True)
+    player_token = Column(String, index=True, nullable=True)
+    created_at = Column(DateTime, default=_now)
+
+
 class TriageVerdict(Base):
     """One §4 fate assigned to a corpus entry by one player.
 
@@ -104,6 +133,11 @@ class GenomeDraft(Base):
     selected_organs = Column(JSON, default=dict)  # {bank: [organ_id, ...]}
     weaver_verdict = Column(JSON, nullable=True)
     player_token = Column(String, nullable=True, index=True)
+    # Promotion: turning a design draft into a runtime genome
+    field_type = Column(String, nullable=True)  # set on promotion
+    promoted = Column(String, default="no")     # "no" | "yes" — string for SQLite simplicity
+    promoted_genome = Column(JSON, nullable=True)  # full game genome dict when promoted
+    source_seed_material_id = Column(String, nullable=True)  # default material for the new game
     created_at = Column(DateTime, default=_now)
     updated_at = Column(DateTime, default=_now, onupdate=_now)
 
