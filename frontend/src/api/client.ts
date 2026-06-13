@@ -57,6 +57,16 @@ export const api = {
   },
   listModels: () =>
     fetch(`${BASE}/api/llm/models`).then(j<{ presets: { id: string; label: string; gateway: string }[]; default: string; provider: string }>),
+  getOperatorProfile: () =>
+    fetch(`${BASE}/api/operator/me`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<{
+      player_token: string;
+      coverage: string;
+      games_played: string[];
+      per_game: Record<string, { session_id: string; completed_at: string | null; dimensions: Record<string, any>; replay_directives: string[] }>;
+      explicit_dimensions: string[];
+      cross_patterns: string[];
+      verdict: string;
+    }>),
   complete: (sid: string) =>
     fetch(`${BASE}/api/sessions/${sid}/complete`, { method: "POST" }).then(j<GameSession>),
   exportMd: (sid: string) =>

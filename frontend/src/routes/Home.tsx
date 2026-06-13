@@ -15,7 +15,7 @@ export default function Home() {
     <div className="app">
       <div className="header">
         <h1>Mindfield Games <span className="muted">— Operator Calibration Pack</span></h1>
-        <span className="muted">LLM Game Field Runtime · v0.1</span>
+        <Link to="/operator" className="kbd" style={{ textDecoration: "none" }}>Operator Profile →</Link>
       </div>
 
       <p className="muted">
