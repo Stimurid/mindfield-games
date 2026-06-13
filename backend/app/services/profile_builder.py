@@ -46,6 +46,17 @@ _SPROUT_OR_SLOP_DIRECTIVES = {
     "balanced":         "next round: introduce a harder borderline tier — half slop, half sprout, indistinguishable by surface",
 }
 
+_PROMISE_COURT_DIRECTIVES = {
+    "missed_no_owner":   "next round: stage more passive 'будет сделано' / 'мы займёмся' — you accepted owner-less promises",
+    "missed_no_deadline":"next round: hide deadlines behind soft adverbs ('в обозримой перспективе') — you let temporal vagueness pass",
+    "missed_no_criterion":"next round: replace concrete criteria with mood words ('значительно улучшим') — you accepted unfalsifiable wins",
+    "missed_no_fallback":"next round: drop the refusal/escape clause — you accepted promises with no exit path",
+    "court_overload":    "next round: include several COMPLETE promises (owner+deadline+criterion+fallback) — you send too much to the court",
+    "completeness_strict":"next round: include borderline promises with one strong field and three weak — you reject too quickly",
+    "balanced":          "next round: stage a 'we' / collective-subject promise — verify you still surface the missing owner",
+}
+
+
 _REGISTER_SAPPER_DIRECTIVES = {
     "literalizes_joke":       "next round: add a phrase that only works as a joke — verify you no longer flatten it into a command",
     "misses_local_code":      "next round: stage the phrase in an in-group chat with hidden shared past — verify you mark in_group_check",
@@ -233,11 +244,81 @@ def build_register_sapper_profile(moves: list[dict], interventions: list[dict]) 
     }
 
 
+def build_promise_court_profile(moves: list[dict], interventions: list[dict]) -> dict:
+    # Track per-promise form completeness from fill_obligation_form moves.
+    forms_by_promise: dict[str, dict] = {}
+    verdicts: Counter = Counter()
+    for m in moves:
+        if m["action"] == "fill_obligation_form":
+            pid = m.get("target_unit_id") or m["payload"].get("promise_id")
+            if pid:
+                forms_by_promise[pid] = m["payload"]
+        if m["action"] in ("send_to_court", "accept_promise"):
+            verdicts["sent_to_court" if m["action"] == "send_to_court" else "accepted"] += 1
+
+    # Which field is most often missing among promises actually filled?
+    missing_counts = Counter()
+    for pid, form in forms_by_promise.items():
+        for key in ("owner", "deadline", "criterion", "fallback"):
+            v = form.get(key)
+            if not isinstance(v, str) or not v.strip():
+                missing_counts[key] += 1
+
+    total_promises = sum(verdicts.values()) or 1
+    court_ratio = verdicts.get("sent_to_court", 0) / total_promises
+    if court_ratio >= 0.75:
+        court_load = "court_overload"
+    elif court_ratio >= 0.4:
+        court_load = "balanced"
+    else:
+        court_load = "completeness_strict"
+
+    # If the player accepted promises with empty fields, name what they kept missing.
+    accepted_with_holes = Counter()
+    for pid, form in forms_by_promise.items():
+        # accept came AFTER fill, deduce by action sequence
+        # heuristic: if verdict for this pid was 'accepted' but a field is empty
+        pass  # we don't carry verdict-per-promise yet; rely on counts
+
+    blindness = "balanced"
+    if court_ratio < 0.4 and missing_counts:
+        worst = missing_counts.most_common(1)[0][0]
+        blindness_key = {"owner": "missed_no_owner", "deadline": "missed_no_deadline",
+                         "criterion": "missed_no_criterion", "fallback": "missed_no_fallback"}.get(worst)
+        if blindness_key:
+            blindness = blindness_key
+
+    target = blindness if blindness != "balanced" else court_load
+    if target not in _PROMISE_COURT_DIRECTIVES:
+        target = "balanced"
+
+    return {
+        "dimensions": {
+            "promise_blindness": blindness,
+            "court_load": court_load,
+            "completeness_demand": "strict" if court_load == "completeness_strict" else ("loose" if court_load == "court_overload" else "balanced"),
+            "missing_field_distribution": dict(missing_counts),
+            "verdict_distribution": dict(verdicts),
+        },
+        "replay_targets": [target],
+        "replay_directives": [_PROMISE_COURT_DIRECTIVES[target]],
+        "markdown_summary": (
+            f"## Promise Court profile\n"
+            f"- Promise blindness: **{blindness}**\n"
+            f"- Court load: **{court_load}** (court ratio {court_ratio:.0%})\n"
+            f"- Verdicts: {dict(verdicts)}\n"
+            f"- Missing fields: {dict(missing_counts)}\n"
+            f"- Replay directive: {_PROMISE_COURT_DIRECTIVES[target]}\n"
+        ),
+    }
+
+
 BUILDERS = {
     "false_click": build_false_click_profile,
     "missing_operation": build_missing_operation_profile,
     "sprout_or_slop": build_sprout_or_slop_profile,
     "register_sapper": build_register_sapper_profile,
+    "promise_court": build_promise_court_profile,
 }
 
 

@@ -1,0 +1,30 @@
+{
+  "id": "promise_court",
+  "title": "Суд обещаний / Promise Court",
+  "short_title": "Promise Court",
+  "function": "Различать обещания с операцией от обещаний без owner, deadline, критерия и сценария отказа",
+  "roots": ["R7", "R9", "R11"],
+  "field_type": "promise_court_text",
+  "player_actions": ["mark_promise", "fill_obligation_form", "send_to_court", "accept_promise"],
+  "rounds": [
+    {"id": "read", "title": "Read", "instruction": "Прочти текст. Не редактируй формулировки.", "time_sec": 120},
+    {"id": "mark", "title": "Mark", "instruction": "Кликни до 5 фраз, которые выглядят как обещания.", "time_sec": 180},
+    {"id": "fill", "title": "Fill", "instruction": "Для каждого обещания заполни форму: owner, deadline, criterion, fallback-если-нет.", "time_sec": 360},
+    {"id": "verdict", "title": "Court", "instruction": "Если хоть одно поле пусто — обещание идёт в суд. Иначе — принимается.", "time_sec": 120}
+  ],
+  "llm_roles": [
+    {"id": "spackler", "triggered_on_action": "mark_promise"}
+  ],
+  "verdicts": ["accepted", "sent_to_court"],
+  "fates": [],
+  "absence_types": [],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["promise_position", "owner", "deadline", "criterion", "fallback", "verdict"],
+  "replay_mutation": {
+    "by_profile_bias": true,
+    "mutation_axis": ["hide_owner", "hide_deadline", "hide_criterion", "hide_fallback", "increase_collective_we"]
+  },
+  "toxins": ["превращение в проверку формальных KPI"],
+  "profile_dimensions": ["promise_blindness", "court_load", "completeness_demand"]
+}

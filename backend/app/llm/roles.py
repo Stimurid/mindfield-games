@@ -192,6 +192,13 @@ def build_material_converter_prompt(
             "\"alt_phrase\": str}}. "
             "Pick one short phrase implied by the source and stage it across 5 different media."
         ),
+        "promise_court_text": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"promise_court_text\", "
+            "\"intro\": str, \"blocks\": [{\"id\": str, \"index\": int, \"text\": str, "
+            "\"is_promise_candidate\": bool, \"dev_kind\": str}]}}. "
+            "Re-imagine the source as a leadership memo with 7–10 blocks where 5 are promise "
+            "candidates of mixed completeness, in the source's language."
+        ),
     }
     user = (
         f"game_id: {game_id}\n"
@@ -245,6 +252,15 @@ def build_material_mutator_prompt(
             "in_group_check, pathos_reset, joke, threat, command, refusal], \"dev_note\": str}], "
             "\"alt_phrase\": str}}. "
             "Produce one short ambiguous phrase plus 5 medium variants, same language."
+        ),
+        "promise_court_text": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"promise_court_text\", "
+            "\"intro\": str, \"blocks\": [{\"id\": str, \"index\": int, \"text\": str, "
+            "\"is_promise_candidate\": bool, \"dev_kind\": one of "
+            "[complete_promise, complete_with_fallback, no_owner_passive, no_owner_no_deadline, "
+            "no_criterion_no_deadline, vague_collective_we, no_anything]}]}}. "
+            "Produce 7–10 blocks of a memo-style text where 5–7 are promise candidates with "
+            "mixed completeness; mark non-promise blocks with is_promise_candidate=false."
         ),
     }
     user_lines = [

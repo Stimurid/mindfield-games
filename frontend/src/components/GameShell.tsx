@@ -7,6 +7,7 @@ import ClickableTextUnits from "./fields/ClickableTextUnits";
 import GapClickText from "./fields/GapClickText";
 import CardSorting from "./fields/CardSorting";
 import MediumShiftPhrase from "./fields/MediumShiftPhrase";
+import PromiseCourtText from "./fields/PromiseCourtText";
 
 interface Props {
   genome: GameGenome;
@@ -21,6 +22,7 @@ export default function GameShell(props: Props) {
     genome.field_type === "clickable_text_units" ? ClickableTextUnits
     : genome.field_type === "gap_click_text" ? GapClickText
     : genome.field_type === "card_sorting" ? CardSorting
+    : genome.field_type === "promise_court_text" ? PromiseCourtText
     : MediumShiftPhrase;
 
   return (

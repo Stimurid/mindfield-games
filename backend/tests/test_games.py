@@ -2,7 +2,7 @@ def test_list_games(client):
     r = client.get("/api/games")
     assert r.status_code == 200
     ids = {g["id"] for g in r.json()}
-    assert ids == {"false_click", "missing_operation", "sprout_or_slop", "register_sapper"}
+    assert ids == {"false_click", "missing_operation", "sprout_or_slop", "register_sapper", "promise_court"}
 
 
 def test_get_game_genome(client):

@@ -10,6 +10,7 @@ _REQUIRED_KEYS_BY_FIELD = {
     "gap_click_text":       {"type", "intro", "blocks", "gaps"},
     "card_sorting":         {"type", "intro", "zones", "cards"},
     "medium_shift_phrase":  {"type", "intro", "phrase", "variants"},
+    "promise_court_text":   {"type", "intro", "blocks"},
 }
 
 

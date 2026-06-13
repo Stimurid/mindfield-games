@@ -1,0 +1,21 @@
+{
+  "id": "real_promise_court_001",
+  "game_id": "promise_court",
+  "title": "[REAL] Newsletter лидера команды после Q4 retrospective",
+  "namespace": "real",
+  "payload": {
+    "type": "promise_court_text",
+    "intro": "Это рассылка, которую руководитель отправил всей команде после Q4 retrospective. Кликни до 5 фраз-обещаний. Для каждого заполни: кто конкретно (owner) · когда (deadline) · по чему мы поймём что выполнено (criterion) · что будет, если не выполнено (fallback). Любая пустая клетка — обещание идёт в суд.",
+    "blocks": [
+      {"id": "pb1", "index": 0, "text": "Команда, всем привет. Прошедший квартал был непростым, но мы выходим из него с ясностью по нескольким направлениям.", "is_promise_candidate": false},
+      {"id": "pb2", "index": 1, "text": "В следующем квартале мы значительно ускорим релизный цикл и постараемся выйти на еженедельный темп.", "is_promise_candidate": true, "dev_kind": "no_owner_no_deadline"},
+      {"id": "pb3", "index": 2, "text": "Качество кода — наш приоритет; будут пересмотрены правила code review.", "is_promise_candidate": true, "dev_kind": "no_owner_passive"},
+      {"id": "pb4", "index": 3, "text": "К середине февраля мы обновим документацию по новой архитектуре — это сделает Анна совместно с архитектурным комитетом.", "is_promise_candidate": true, "dev_kind": "complete_promise"},
+      {"id": "pb5", "index": 4, "text": "Также мы намерены кардинально улучшить процессы онбординга новых сотрудников.", "is_promise_candidate": true, "dev_kind": "no_criterion_no_deadline"},
+      {"id": "pb6", "index": 5, "text": "По теме burnout: мы обязательно займёмся этим вопросом серьёзно в этом квартале.", "is_promise_candidate": true, "dev_kind": "vague_collective_we"},
+      {"id": "pb7", "index": 6, "text": "В случае, если до конца марта мы не запустим обновлённый pipeline сборки, Илья как тех-лид соберёт post-mortem команды и предложит план дальше.", "is_promise_candidate": true, "dev_kind": "complete_with_fallback"},
+      {"id": "pb8", "index": 7, "text": "Стремимся стать лучшей командой в компании.", "is_promise_candidate": true, "dev_kind": "no_anything"},
+      {"id": "pb9", "index": 8, "text": "Спасибо всем за вклад.", "is_promise_candidate": false}
+    ]
+  }
+}

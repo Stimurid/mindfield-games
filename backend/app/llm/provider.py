@@ -228,6 +228,16 @@ class MockProvider(LLMProvider):
                     ],
                     "alt_phrase": prev.get("alt_phrase") or "",
                 }
+            elif field_type == "promise_court_text":
+                new_payload = {
+                    "type": "promise_court_text",
+                    "intro": tag,
+                    "blocks": [
+                        {"id": f"mp{i}", "index": i, "text": f"{tag} block {i}",
+                         "is_promise_candidate": i % 2 == 1, "dev_kind": "no_owner_no_deadline"}
+                        for i in range(8)
+                    ],
+                }
             else:
                 new_payload = {"type": field_type, "intro": tag}
             return {
