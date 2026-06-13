@@ -84,6 +84,21 @@ export default function LibraryEntry() {
     api.libraryComments(id).then(setComments).catch(() => {});
   }, [id]);
 
+  async function genChimera() {
+    if (!id) return;
+    setConvertBusy("chimera");
+    setErr(null);
+    try {
+      const r = await api.generateChimeraDraft(id);
+      // navigate to configurator; designer can open the draft from there
+      nav(`/configurator`);
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+    } finally {
+      setConvertBusy(null);
+    }
+  }
+
   async function playAs(gameId: string) {
     if (!id) return;
     setConvertBusy(gameId);
@@ -186,6 +201,23 @@ export default function LibraryEntry() {
       )}
 
       <TriagePanel entryId={entry.id} />
+
+      {entry.kind === "chimera" && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
+            Это ячейка химерной матрицы — скрещивание двух родов. Попроси chimera_weaver
+            собрать черновик игры по этому скрещиванию. Он подберёт органы из 7 банков и
+            отправит в /configurator.
+          </div>
+          <button
+            className="primary"
+            onClick={genChimera}
+            disabled={convertBusy !== null}
+          >
+            {convertBusy === "chimera" ? "Прошу химеру…" : "Запросить химеру у LLM"}
+          </button>
+        </div>
+      )}
 
       <div className="card" style={{ marginTop: 16 }}>
         <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>

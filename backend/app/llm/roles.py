@@ -36,6 +36,18 @@ SPROUT_ADVOCATE_SYSTEM = (
     "Hold the conflict — do NOT resolve. Return JSON only."
 )
 
+CHIMERA_WEAVER_SYSTEM = (
+    "You are the chimera_weaver organ. You take a chimera matrix cell — the "
+    "crossing of two attractor families — and propose a NEW playable game that "
+    "lives at that crossing. You are NOT an assistant. You do not summarise the "
+    "attractors. You produce a draft GameGenome shape: a name, a родовая "
+    "функция, a single playable verb, a maturity_stage, and 1-3 named organs "
+    "per bank (field, object, action, llm_role, crisis, trace, mutation). "
+    "Pick organ names from the canonical bank text whenever possible. "
+    "NEVER include any degradation organ. Return JSON only."
+)
+
+
 PLAYABILITY_CRITIC_SYSTEM = (
     "You are the playability_critic / GameWeaver organ for the Mindfield "
     "configurator. You judge a draft GameGenome — name, function, playable verb, "
@@ -162,6 +174,47 @@ def build_literal_alien_prompt(phrase: str, medium: str) -> dict:
 
 
 import json as _json
+
+
+def build_chimera_weaver_prompt(chimera_title: str, chimera_body: str,
+                                  canon_organs_by_bank: dict[str, list[str]]) -> dict:
+    org_block = "\n".join(
+        f"  {bank}: {names}" for bank, names in canon_organs_by_bank.items()
+    )
+    user = (
+        f"chimera_cell_title: {chimera_title!r}\n"
+        f"chimera_cell_body: {chimera_body[:1200]!r}\n\n"
+        "canonical organs per bank (pick from these by name when natural):\n"
+        f"{org_block}\n\n"
+        "Return JSON: {"
+        "\"name\": str (suggested game name in the same language as the cell), "
+        "\"function\": str (родовая функция — one sentence), "
+        "\"verb\": str (one playable verb, infinitive), "
+        "\"maturity_stage\": int (0..5), "
+        "\"organs\": {"
+            "\"field\": [str,...], "
+            "\"object\": [str,...], "
+            "\"action\": [str,...], "
+            "\"llm_role\": [str,...], "
+            "\"crisis\": [str,...], "
+            "\"trace\": [str,...], "
+            "\"mutation\": [str,...]"
+        "}, "
+        "\"critique\": str (one short sentence on the main playability risk)"
+        "}."
+    )
+    return {
+        "system": CHIMERA_WEAVER_SYSTEM,
+        "user": user,
+        "schema": {
+            "name": str,
+            "function": str,
+            "verb": str,
+            "maturity_stage": int,
+            "organs": dict,
+            "critique": str,
+        },
+    }
 
 
 def build_playability_critic_prompt(draft: dict, organs_by_bank: dict[str, list[str]]) -> dict:
@@ -340,6 +393,7 @@ ROLE_BUILDERS = {
     "material_mutator": build_material_mutator_prompt,
     "material_converter": build_material_converter_prompt,
     "playability_critic": build_playability_critic_prompt,
+    "chimera_weaver": build_chimera_weaver_prompt,
 }
 
 
@@ -372,4 +426,10 @@ def build_prompt_for_role(role: str, context: dict[str, Any]) -> dict:
         )
     if role == "playability_critic":
         return builder(context.get("draft", {}), context.get("organs_by_bank", {}))
+    if role == "chimera_weaver":
+        return builder(
+            context.get("chimera_title", ""),
+            context.get("chimera_body", ""),
+            context.get("canon_organs_by_bank", {}),
+        )
     raise ValueError(role)

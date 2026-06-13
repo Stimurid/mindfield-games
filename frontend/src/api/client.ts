@@ -117,6 +117,12 @@ export const api = {
     fetch(`${BASE}/api/library/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; snippet: string }[]>),
   libraryComments: (entryId: string) =>
     fetch(`${BASE}/api/library/entries/${entryId}/comments`).then(j<{ id: string; role: string; angle: string | null; output: any; model: string | null; created_at: string | null }[]>),
+  generateChimeraDraft: (entryId: string, model?: string) =>
+    fetch(`${BASE}/api/library/entries/${entryId}/generate-chimera-draft`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify({ model }),
+    }).then(j<{ draft_id: string; name: string; function: string; verb: string; maturity_stage: number; selected_organs: Record<string, string[]>; critique: string; source_chimera_id: string }>),
   convertEntry: (entryId: string, gameId: string, model?: string) =>
     fetch(`${BASE}/api/library/entries/${entryId}/convert`, {
       method: "POST",

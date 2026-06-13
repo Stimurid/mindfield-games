@@ -48,6 +48,8 @@ _ROLE_SHAPE: dict[str, dict[str, type]] = {
     "material_converter":{"new_title": str, "new_payload": dict},
     "playability_critic":{"verb_status": str, "crisis_status": str, "trace_status": str,
                           "degradation_warnings": list, "playable_verdict": str, "critique": str},
+    "chimera_weaver":   {"name": str, "function": str, "verb": str,
+                          "maturity_stage": int, "organs": dict, "critique": str},
 }
 
 _NON_ASSISTANT_FOOTER = (
@@ -152,6 +154,27 @@ class MockProvider(LLMProvider):
                     "pathos-reset rudeness as a stabilising move",
                     "who is actually addressed and who must answer",
                 ],
+            }
+
+        if role == "chimera_weaver":
+            title = context.get("chimera_title") or "chimera"
+            canon = context.get("canon_organs_by_bank") or {}
+            # Pick the first organ name per bank as a deterministic stub.
+            organs = {}
+            for bank, names in canon.items():
+                if bank == "degradation":
+                    continue
+                if names:
+                    organs[bank] = [names[0]]
+            return {
+                "_role": role,
+                "_prompt_spec": spec,
+                "name": f"[mock chimera] {title[:60]}",
+                "function": "тренировать различение в скрещении двух родов",
+                "verb": "кликнуть",
+                "maturity_stage": 1,
+                "organs": organs,
+                "critique": "мок не оценивает играбельность — нужен живой LLM",
             }
 
         if role == "playability_critic":
@@ -315,7 +338,8 @@ class OpenAICompatibleProvider(LLMProvider):
             ],
             "response_format": {"type": "json_object"},
             "temperature": 0.7,
-            "max_tokens": 3500 if role in ("material_mutator", "material_converter") else 600,
+            "max_tokens": 3500 if role in ("material_mutator", "material_converter") else (
+                          1200 if role == "chimera_weaver" else 600),
         }
         req = urllib.request.Request(
             f"{self.base_url}/chat/completions",
