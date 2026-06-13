@@ -36,6 +36,21 @@ SPROUT_ADVOCATE_SYSTEM = (
     "Hold the conflict — do NOT resolve. Return JSON only."
 )
 
+PLAYABILITY_CRITIC_SYSTEM = (
+    "You are the playability_critic / GameWeaver organ for the Mindfield "
+    "configurator. You judge a draft GameGenome — name, function, playable verb, "
+    "maturity stage and selected organs from 8 banks (field, object, action, "
+    "llm_role, crisis, trace, mutation, degradation). You are NOT an assistant. "
+    "You do NOT redesign the game for the designer. You attack what is missing "
+    "and name one concrete next move. "
+    "Rules: if no playable verb, mark verb_status='missing'. If no crisis selected, "
+    "crisis_status='missing'. If no trace organ selected, trace_status='missing'. "
+    "If ANY degradation organ is selected, flag it loudly and refuse playability. "
+    "If LLM-role overlaps with 'обычный промптинг' family — call it out. "
+    "Return JSON only, no prose, no markdown."
+)
+
+
 MATERIAL_CONVERTER_SYSTEM = (
     "You are the material_converter organ. You take a text from the Mindfield "
     "corpus library (an attractor description, a breed card, a chimera cell, "
@@ -147,6 +162,41 @@ def build_literal_alien_prompt(phrase: str, medium: str) -> dict:
 
 
 import json as _json
+
+
+def build_playability_critic_prompt(draft: dict, organs_by_bank: dict[str, list[str]]) -> dict:
+    lines = [
+        f"draft_name: {draft.get('name', '')!r}",
+        f"function: {draft.get('function', '')!r}",
+        f"playable_verb: {draft.get('verb', '')!r}",
+        f"maturity_stage: {draft.get('maturity_stage', 1)}",
+        "selected_organs (bank: [names]):",
+    ]
+    for bank, names in organs_by_bank.items():
+        lines.append(f"  {bank}: {names}")
+    lines.append("")
+    lines.append(
+        "Return JSON: {"
+        "\"verb_status\": str (present|missing|weak), "
+        "\"crisis_status\": str (present|missing|weak), "
+        "\"trace_status\": str (present|missing|weak), "
+        "\"degradation_warnings\": [str, ...] (names of degradation organs present), "
+        "\"playable_verdict\": str (playable|not_playable_yet|rotten), "
+        "\"critique\": str (one short sentence in Russian — the single worst problem)"
+        "}."
+    )
+    return {
+        "system": PLAYABILITY_CRITIC_SYSTEM,
+        "user": "\n".join(lines),
+        "schema": {
+            "verb_status": str,
+            "crisis_status": str,
+            "trace_status": str,
+            "degradation_warnings": list,
+            "playable_verdict": str,
+            "critique": str,
+        },
+    }
 
 
 def build_material_converter_prompt(
@@ -289,6 +339,7 @@ ROLE_BUILDERS = {
     "literal_alien": build_literal_alien_prompt,
     "material_mutator": build_material_mutator_prompt,
     "material_converter": build_material_converter_prompt,
+    "playability_critic": build_playability_critic_prompt,
 }
 
 
@@ -319,4 +370,6 @@ def build_prompt_for_role(role: str, context: dict[str, Any]) -> dict:
             context.get("source_title", ""),
             context.get("source_body", ""),
         )
+    if role == "playability_critic":
+        return builder(context.get("draft", {}), context.get("organs_by_bank", {}))
     raise ValueError(role)

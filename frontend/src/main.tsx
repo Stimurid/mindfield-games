@@ -8,6 +8,7 @@ import Operator from "./routes/Operator";
 import Library from "./routes/Library";
 import LibrarySection from "./routes/LibrarySection";
 import LibraryEntry from "./routes/LibraryEntry";
+import Configurator from "./routes/Configurator";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/library" element={<Library />} />
         <Route path="/library/section/:kind" element={<LibrarySection />} />
         <Route path="/library/entry/:id" element={<LibraryEntry />} />
+        <Route path="/configurator" element={<Configurator />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,

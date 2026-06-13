@@ -46,6 +46,8 @@ _ROLE_SHAPE: dict[str, dict[str, type]] = {
     "literal_alien":   {"literal_reading": str, "things_i_cannot_see": list},
     "material_mutator":{"new_title": str, "new_payload": dict},
     "material_converter":{"new_title": str, "new_payload": dict},
+    "playability_critic":{"verb_status": str, "crisis_status": str, "trace_status": str,
+                          "degradation_warnings": list, "playable_verdict": str, "critique": str},
 }
 
 _NON_ASSISTANT_FOOTER = (
@@ -150,6 +152,40 @@ class MockProvider(LLMProvider):
                     "pathos-reset rudeness as a stabilising move",
                     "who is actually addressed and who must answer",
                 ],
+            }
+
+        if role == "playability_critic":
+            draft = context.get("draft", {})
+            organs = context.get("organs_by_bank", {})
+            verb = (draft.get("verb") or "").strip()
+            verb_status = "present" if verb else "missing"
+            crisis_status = "present" if organs.get("crisis") else "missing"
+            trace_status = "present" if organs.get("trace") else "missing"
+            degr = organs.get("degradation") or []
+            if degr:
+                playable = "rotten"
+                critique = f"вы выбрали орган деградации '{degr[0]}' — это путь в не-игру"
+            elif verb_status == "missing":
+                playable = "not_playable_yet"
+                critique = "нет playable verb — без глагола игра не родилась"
+            elif crisis_status == "missing":
+                playable = "not_playable_yet"
+                critique = "кризис не выбран — без кризиса нет игры-преображения"
+            elif trace_status == "missing":
+                playable = "not_playable_yet"
+                critique = "след не выбран — без следа нет коэволюции"
+            else:
+                playable = "playable"
+                critique = "минимальный комплект собран — можно отыгрывать"
+            return {
+                "_role": role,
+                "_prompt_spec": spec,
+                "verb_status": verb_status,
+                "crisis_status": crisis_status,
+                "trace_status": trace_status,
+                "degradation_warnings": list(degr),
+                "playable_verdict": playable,
+                "critique": critique,
             }
 
         if role == "material_converter":

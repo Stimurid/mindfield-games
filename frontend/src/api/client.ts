@@ -73,6 +73,32 @@ export const api = {
     fetch(`${BASE}/api/library/entries${kind ? `?kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; source_pass: string; source_line: number | null }[]>),
   libraryEntry: (id: string) =>
     fetch(`${BASE}/api/library/entries/${id}`).then(j<{ id: string; code: string; kind: string; title: string; body_md: string; source_pass: string; source_line: number | null; parents: any[]; children: any[] }>),
+  configBanks: () =>
+    fetch(`${BASE}/api/configurator/banks`).then(j<{ bank: string; label: string; hint: string; count: number; is_degradation: boolean }[]>),
+  configOrgans: (bank?: string) =>
+    fetch(`${BASE}/api/configurator/organs${bank ? `?bank=${bank}` : ""}`).then(j<{ id: string; bank: string; code: string; name: string; description: string | null; source: string }[]>),
+  configCreateDraft: (payload: { name: string; function?: string; verb?: string; maturity_stage?: number; selected_organs?: Record<string, string[]> }) =>
+    fetch(`${BASE}/api/configurator/drafts`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  configListDrafts: (mine = true) =>
+    fetch(`${BASE}/api/configurator/drafts${mine ? "?mine=true" : ""}`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<any[]>),
+  configGetDraft: (id: string) =>
+    fetch(`${BASE}/api/configurator/drafts/${id}`).then(j<any>),
+  configPatchDraft: (id: string, payload: any) =>
+    fetch(`${BASE}/api/configurator/drafts/${id}`, {
+      method: "PATCH",
+      headers: tokHeaders(),
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  configRunWeaver: (id: string, model?: string) =>
+    fetch(`${BASE}/api/configurator/drafts/${id}/weaver`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify({ model }),
+    }).then(j<{ draft: any; verdict: { verb_status: string; crisis_status: string; trace_status: string; degradation_warnings: string[]; playable_verdict: string; critique: string } }>),
   librarySearch: (q: string, kind?: string) =>
     fetch(`${BASE}/api/library/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; snippet: string }[]>),
   libraryComments: (entryId: string) =>

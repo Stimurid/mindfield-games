@@ -57,6 +57,40 @@ class PlayerMove(Base):
     session = relationship("GameSession", back_populates="moves")
 
 
+class Organ(Base):
+    """An entry in one of the 8 canonical organ banks (spec §8).
+
+    The configurator selects organs from these banks to assemble a draft genome.
+    Player-extracted organs (from the §4 triage of raw cards) also land here.
+    """
+    __tablename__ = "organs"
+    id = Column(String, primary_key=True, default=_uuid)
+    bank = Column(String, index=True, nullable=False)
+    # field | object | action | llm_role | crisis | trace | mutation | degradation
+    code = Column(String, unique=True, nullable=False)  # bank.slug
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    source = Column(String, default="canon_v0.1")
+    source_entry_id = Column(String, ForeignKey("corpus_entries.id"), nullable=True)
+    created_at = Column(DateTime, default=_now)
+
+
+class GenomeDraft(Base):
+    """A GameGenome assembled in the configurator. Lives outside game_genomes/
+    JSON until it is promoted by the designer."""
+    __tablename__ = "genome_drafts"
+    id = Column(String, primary_key=True, default=_uuid)
+    name = Column(String, nullable=False)
+    function = Column(String, nullable=True)
+    verb = Column(String, nullable=True)
+    maturity_stage = Column(Integer, default=1)  # 0..5 (§3)
+    selected_organs = Column(JSON, default=dict)  # {bank: [organ_id, ...]}
+    weaver_verdict = Column(JSON, nullable=True)
+    player_token = Column(String, nullable=True, index=True)
+    created_at = Column(DateTime, default=_now)
+    updated_at = Column(DateTime, default=_now, onupdate=_now)
+
+
 class CorpusEntry(Base):
     """A node in the Mindfield corpus library.
 
