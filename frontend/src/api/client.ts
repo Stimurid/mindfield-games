@@ -1,10 +1,20 @@
 import type { GameGenome, GameSession, Material, LLMIntervention, PlayerMove } from "../types";
+import { getLang } from "../i18n";
 
 const BASE = "";
 
 async function j<T>(r: Response): Promise<T> {
   if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
   return r.json() as Promise<T>;
+}
+
+/** Append ?lang=en (or current lang) to a GET URL that returns user-facing text.
+ *  ru is the source language and is treated as a no-op — no param sent. */
+function withLang(url: string): string {
+  const l = getLang();
+  if (l === "ru") return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}lang=${l}`;
 }
 
 // Lightweight player identity — UUID stored in localStorage, sent on every
@@ -23,11 +33,11 @@ function tokHeaders(): Record<string, string> {
 }
 
 export const api = {
-  listGames: () => fetch(`${BASE}/api/games`).then(j<GameGenome[]>),
-  getGame: (id: string) => fetch(`${BASE}/api/games/${id}`).then(j<GameGenome>),
+  listGames: () => fetch(withLang(`${BASE}/api/games`)).then(j<GameGenome[]>),
+  getGame: (id: string) => fetch(withLang(`${BASE}/api/games/${id}`)).then(j<GameGenome>),
   listMaterials: (gameId: string) =>
-    fetch(`${BASE}/api/materials?gameId=${gameId}`).then(j<Material[]>),
-  getMaterial: (id: string) => fetch(`${BASE}/api/materials/${id}`).then(j<Material>),
+    fetch(withLang(`${BASE}/api/materials?gameId=${gameId}`)).then(j<Material[]>),
+  getMaterial: (id: string) => fetch(withLang(`${BASE}/api/materials/${id}`)).then(j<Material>),
   createSession: (gameId: string, materialId?: string) =>
     fetch(`${BASE}/api/sessions`, {
       method: "POST",
@@ -68,13 +78,13 @@ export const api = {
       verdict: string;
     }>),
   librarySections: () =>
-    fetch(`${BASE}/api/library/sections`).then(j<{ kind: string; label: string; count: number }[]>),
+    fetch(withLang(`${BASE}/api/library/sections`)).then(j<{ kind: string; label: string; count: number }[]>),
   libraryEntries: (kind?: string, maturity?: number) => {
     const params = new URLSearchParams();
     if (kind) params.set("kind", kind);
     if (maturity !== undefined) params.set("maturity", String(maturity));
     const qs = params.toString();
-    return fetch(`${BASE}/api/library/entries${qs ? "?" + qs : ""}`).then(j<{ id: string; code: string; kind: string; title: string; source_pass: string; source_line: number | null; maturity_stage: number | null }[]>);
+    return fetch(withLang(`${BASE}/api/library/entries${qs ? "?" + qs : ""}`)).then(j<{ id: string; code: string; kind: string; title: string; source_pass: string; source_line: number | null; maturity_stage: number | null }[]>);
   },
   patchMaturity: (entryId: string, maturity_stage: number) =>
     fetch(`${BASE}/api/library/entries/${entryId}/maturity`, {
@@ -83,11 +93,11 @@ export const api = {
       body: JSON.stringify({ maturity_stage }),
     }).then(j<{ id: string; maturity_stage: number }>),
   libraryEntry: (id: string) =>
-    fetch(`${BASE}/api/library/entries/${id}`).then(j<{ id: string; code: string; kind: string; title: string; body_md: string; source_pass: string; source_line: number | null; parents: any[]; children: any[] }>),
+    fetch(withLang(`${BASE}/api/library/entries/${id}`)).then(j<{ id: string; code: string; kind: string; title: string; body_md: string; source_pass: string; source_line: number | null; parents: any[]; children: any[] }>),
   configBanks: () =>
-    fetch(`${BASE}/api/configurator/banks`).then(j<{ bank: string; label: string; hint: string; count: number; is_degradation: boolean }[]>),
+    fetch(withLang(`${BASE}/api/configurator/banks`)).then(j<{ bank: string; label: string; hint: string; count: number; is_degradation: boolean }[]>),
   configOrgans: (bank?: string) =>
-    fetch(`${BASE}/api/configurator/organs${bank ? `?bank=${bank}` : ""}`).then(j<{ id: string; bank: string; code: string; name: string; description: string | null; source: string }[]>),
+    fetch(withLang(`${BASE}/api/configurator/organs${bank ? `?bank=${bank}` : ""}`)).then(j<{ id: string; bank: string; code: string; name: string; description: string | null; source: string }[]>),
   configCreateDraft: (payload: { name: string; function?: string; verb?: string; maturity_stage?: number; selected_organs?: Record<string, string[]> }) =>
     fetch(`${BASE}/api/configurator/drafts`, {
       method: "POST",
@@ -111,7 +121,7 @@ export const api = {
       body: JSON.stringify({ model }),
     }).then(j<{ draft: any; verdict: { verb_status: string; crisis_status: string; trace_status: string; degradation_warnings: string[]; playable_verdict: string; critique: string } }>),
   triageFates: () =>
-    fetch(`${BASE}/api/triage/fates`).then(j<{ fate: string; label: string }[]>),
+    fetch(withLang(`${BASE}/api/triage/fates`)).then(j<{ fate: string; label: string }[]>),
   triageEntry: (entryId: string) =>
     fetch(`${BASE}/api/triage/entries/${entryId}`).then(j<any[]>),
   assignFate: (entryId: string, payload: { fate: string; note?: string; organ_bank?: string; organ_name?: string }) =>
@@ -209,7 +219,7 @@ export const api = {
       body: JSON.stringify({ field_type, source_seed_material_id }),
     }).then(j<{ draft_id: string; promoted_game_id: string; field_type: string; source_seed_material_id: string | null }>),
   librarySearch: (q: string, kind?: string) =>
-    fetch(`${BASE}/api/library/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; snippet: string }[]>),
+    fetch(withLang(`${BASE}/api/library/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}`)).then(j<{ id: string; code: string; kind: string; title: string; snippet: string }[]>),
   libraryComments: (entryId: string) =>
     fetch(`${BASE}/api/library/entries/${entryId}/comments`).then(j<{ id: string; role: string; angle: string | null; output: any; model: string | null; created_at: string | null }[]>),
   generateChimeraDraft: (entryId: string, model?: string) =>

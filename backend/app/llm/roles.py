@@ -36,6 +36,23 @@ SPROUT_ADVOCATE_SYSTEM = (
     "Hold the conflict — do NOT resolve. Return JSON only."
 )
 
+TRANSLATOR_SYSTEM = (
+    "You are a translation organ for the Mindfield psychotechnical-game platform. "
+    "Translate the supplied text accurately into the requested target language. "
+    "PRESERVE: Markdown formatting (headings, bold, italics, lists, code blocks). "
+    "Embedded ASCII identifiers / code names (e.g. 'pseudo_depth', 'register_sapper', "
+    "'A01', 'R3', 'gpt-4.1-mini'). Original whitespace and line breaks. "
+    "TRANSLATE: the body of human-readable text. "
+    "Domain terms: 'орган' → 'organ' (game-organ sense), 'порода' → 'breed', "
+    "'аттрактор' → 'attractor', 'химера' → 'chimera', 'росток' → 'sprout', "
+    "'слоп' → 'slop', 'шпаклёвщик' → 'spackler', 'прокурор' → 'prosecutor', "
+    "'адвокат ростка' → 'sprout advocate', 'литералист-чужой' → 'literal alien', "
+    "'клик' → 'click', 'судьба' → 'fate', 'триаж' → 'triage'. "
+    "Do NOT explain, comment, summarise, or add notes. "
+    "Return JSON only: {\"translated\": str}."
+)
+
+
 CHIMERA_WEAVER_SYSTEM = (
     "You are the chimera_weaver organ. You take a chimera matrix cell — the "
     "crossing of two attractor families — and propose a NEW playable game that "
@@ -174,6 +191,19 @@ def build_literal_alien_prompt(phrase: str, medium: str) -> dict:
 
 
 import json as _json
+
+
+def build_translator_prompt(text: str, target_lang: str) -> dict:
+    user = (
+        f"target_language: {target_lang!r}\n"
+        f"source_text:\n```\n{text}\n```\n\n"
+        "Return JSON: {\"translated\": str}."
+    )
+    return {
+        "system": TRANSLATOR_SYSTEM,
+        "user": user,
+        "schema": {"translated": str},
+    }
 
 
 def build_chimera_weaver_prompt(chimera_title: str, chimera_body: str,
@@ -394,6 +424,7 @@ ROLE_BUILDERS = {
     "material_converter": build_material_converter_prompt,
     "playability_critic": build_playability_critic_prompt,
     "chimera_weaver": build_chimera_weaver_prompt,
+    "translator": build_translator_prompt,
 }
 
 
@@ -432,4 +463,6 @@ def build_prompt_for_role(role: str, context: dict[str, Any]) -> dict:
             context.get("chimera_body", ""),
             context.get("canon_organs_by_bank", {}),
         )
+    if role == "translator":
+        return builder(context.get("text", ""), context.get("target_lang", "en"))
     raise ValueError(role)

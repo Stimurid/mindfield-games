@@ -8,6 +8,13 @@ from ..models import CorpusEntry, CorpusLink, LibraryComment, Material, Organ, G
 from ..llm.provider import get_provider
 from ..services.corpus_to_material import convert_entry_to_material_payload
 from ..services.replay_mutator import MutatorError
+from ..services.translation import (
+    translate_text,
+    LIBRARY_SECTION_PATHS,
+    LIBRARY_ENTRY_LIST_PATHS,
+    LIBRARY_ENTRY_DETAIL_PATHS,
+    translate_dict,
+)
 
 router = APIRouter(prefix="/api/library", tags=["library"])
 
@@ -32,16 +39,20 @@ _KIND_LABEL = {
 
 
 @router.get("/sections")
-def list_sections(db: Session = Depends(get_db)):
+def list_sections(lang: str = Query("ru"), db: Session = Depends(get_db)):
     rows = (
         db.query(CorpusEntry.kind, func.count(CorpusEntry.id))
         .group_by(CorpusEntry.kind)
         .all()
     )
-    return [
+    out = [
         {"kind": k, "label": _KIND_LABEL.get(k, k), "count": c}
         for k, c in sorted(rows, key=lambda r: list(_KIND_LABEL.keys()).index(r[0]) if r[0] in _KIND_LABEL else 99)
     ]
+    if lang != "ru":
+        for s in out:
+            s["label"] = translate_text(s["label"], lang, db)
+    return out
 
 
 @router.get("/entries")
@@ -53,6 +64,7 @@ def list_entries(
     maturity_min: int | None = Query(None, ge=0, le=5),
     maturity_max: int | None = Query(None, ge=0, le=5),
     limit: int = 500,
+    lang: str = Query("ru"),
 ):
     q = db.query(CorpusEntry)
     if kind:
@@ -67,7 +79,7 @@ def list_entries(
         if maturity_max is not None:
             q = q.filter(CorpusEntry.maturity_stage <= maturity_max)
     rows = q.order_by(CorpusEntry.kind, CorpusEntry.order_key, CorpusEntry.code).limit(limit).all()
-    return [
+    out = [
         {
             "id": e.id,
             "code": e.code,
@@ -79,6 +91,10 @@ def list_entries(
         }
         for e in rows
     ]
+    if lang != "ru":
+        for r in out:
+            r["title"] = translate_text(r["title"], lang, db)
+    return out
 
 
 class MaturityPatch(BaseModel):
@@ -99,7 +115,7 @@ def patch_maturity(entry_id: str, payload: MaturityPatch, db: Session = Depends(
 
 
 @router.get("/entries/{entry_id}")
-def get_entry(entry_id: str, db: Session = Depends(get_db)):
+def get_entry(entry_id: str, lang: str = Query("ru"), db: Session = Depends(get_db)):
     e = db.query(CorpusEntry).filter(CorpusEntry.id == entry_id).first()
     if not e:
         raise HTTPException(404, "no such corpus entry")
@@ -115,7 +131,7 @@ def get_entry(entry_id: str, db: Session = Depends(get_db)):
         .filter(CorpusLink.parent_id == e.id)
         .all()
     )
-    return {
+    out = {
         "id": e.id,
         "code": e.code,
         "kind": e.kind,
@@ -127,6 +143,14 @@ def get_entry(entry_id: str, db: Session = Depends(get_db)):
         "parents":  [{"id": p[0].id, "code": p[0].code, "title": p[0].title, "relation": p[1]} for p in parents],
         "children": [{"id": c[0].id, "code": c[0].code, "title": c[0].title, "relation": c[1]} for c in children],
     }
+    if lang != "ru":
+        out["title"] = translate_text(out["title"], lang, db)
+        out["body_md"] = translate_text(out["body_md"], lang, db)
+        for p in out["parents"]:
+            p["title"] = translate_text(p["title"], lang, db)
+        for c in out["children"]:
+            c["title"] = translate_text(c["title"], lang, db)
+    return out
 
 
 @router.get("/entries/{entry_id}/comments")

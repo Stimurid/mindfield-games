@@ -50,6 +50,7 @@ _ROLE_SHAPE: dict[str, dict[str, type]] = {
                           "degradation_warnings": list, "playable_verdict": str, "critique": str},
     "chimera_weaver":   {"name": str, "function": str, "verb": str,
                           "maturity_stage": int, "organs": dict, "critique": str},
+    "translator":       {"translated": str},
 }
 
 _NON_ASSISTANT_FOOTER = (
@@ -154,6 +155,16 @@ class MockProvider(LLMProvider):
                     "pathos-reset rudeness as a stabilising move",
                     "who is actually addressed and who must answer",
                 ],
+            }
+
+        if role == "translator":
+            text = context.get("text", "") or ""
+            target = context.get("target_lang", "en")
+            # Deterministic mock: tag the text but preserve identity for hashing.
+            return {
+                "_role": role,
+                "_prompt_spec": spec,
+                "translated": f"[{target}] {text}",
             }
 
         if role == "chimera_weaver":
@@ -339,7 +350,8 @@ class OpenAICompatibleProvider(LLMProvider):
             "response_format": {"type": "json_object"},
             "temperature": 0.7,
             "max_tokens": 3500 if role in ("material_mutator", "material_converter") else (
-                          1200 if role == "chimera_weaver" else 600),
+                          1200 if role == "chimera_weaver" else
+                          2500 if role == "translator" else 600),
         }
         req = urllib.request.Request(
             f"{self.base_url}/chat/completions",

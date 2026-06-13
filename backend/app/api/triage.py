@@ -13,6 +13,7 @@ from typing import Optional
 from ..database import get_db
 from ..models import CorpusEntry, Organ, TriageVerdict
 from ..services.organ_seed import BANK_LABEL
+from ..services.translation import translate_text
 
 
 router = APIRouter(prefix="/api/triage", tags=["triage"])
@@ -182,8 +183,12 @@ def triage_stats(
 
 
 @router.get("/fates")
-def list_fates():
-    return [{"fate": f, "label": FATE_LABEL[f]} for f in FATES]
+def list_fates(lang: str = Query("ru"), db: Session = Depends(get_db)):
+    out = [{"fate": f, "label": FATE_LABEL[f]} for f in FATES]
+    if lang != "ru":
+        for r in out:
+            r["label"] = translate_text(r["label"], lang, db)
+    return out
 
 
 def _serialize(v: TriageVerdict) -> dict:

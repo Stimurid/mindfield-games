@@ -7,12 +7,13 @@ from ..models import Organ, GenomeDraft
 from ..llm.provider import get_provider
 from ..services.organ_seed import BANK_LABEL, BANK_HINT
 from ..services.genome_promote import promote_draft, PromoteError, VALID_FIELD_TYPES
+from ..services.translation import translate_text
 
 router = APIRouter(prefix="/api/configurator", tags=["configurator"])
 
 
 @router.get("/banks")
-def list_banks(db: Session = Depends(get_db)):
+def list_banks(lang: str = Query("ru"), db: Session = Depends(get_db)):
     from sqlalchemy import func
     rows = (
         db.query(Organ.bank, func.count(Organ.id))
@@ -20,7 +21,7 @@ def list_banks(db: Session = Depends(get_db)):
         .all()
     )
     counts = dict(rows)
-    return [
+    out = [
         {
             "bank": b,
             "label": BANK_LABEL.get(b, b),
@@ -30,22 +31,34 @@ def list_banks(db: Session = Depends(get_db)):
         }
         for b in BANK_LABEL.keys()
     ]
+    if lang != "ru":
+        for r in out:
+            r["label"] = translate_text(r["label"], lang, db)
+            r["hint"] = translate_text(r["hint"], lang, db)
+    return out
 
 
 @router.get("/organs")
 def list_organs(
     db: Session = Depends(get_db),
     bank: Optional[str] = None,
+    lang: str = Query("ru"),
 ):
     q = db.query(Organ)
     if bank:
         q = q.filter(Organ.bank == bank)
     rows = q.order_by(Organ.bank, Organ.name).all()
-    return [
+    out = [
         {"id": o.id, "bank": o.bank, "code": o.code, "name": o.name,
          "description": o.description, "source": o.source}
         for o in rows
     ]
+    if lang != "ru":
+        for r in out:
+            r["name"] = translate_text(r["name"], lang, db)
+            if r["description"]:
+                r["description"] = translate_text(r["description"], lang, db)
+    return out
 
 
 class DraftIn(BaseModel):

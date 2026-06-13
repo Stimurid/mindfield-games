@@ -75,6 +75,23 @@ class Organ(Base):
     created_at = Column(DateTime, default=_now)
 
 
+class Translation(Base):
+    """LLM translation cache. Identical source strings dedup by SHA256.
+
+    Identifier-shaped fields (organ codes, fate ids, verdict ids, model
+    ids, field_type strings, status enums) are NOT translated — they
+    are stable codes. Only human-readable strings.
+    """
+    __tablename__ = "translations"
+    id = Column(String, primary_key=True, default=_uuid)
+    source_hash = Column(String, index=True, nullable=False)
+    source_lang = Column(String, default="ru", nullable=False)
+    target_lang = Column(String, index=True, nullable=False)
+    source_text = Column(String, nullable=False)
+    target_text = Column(String, nullable=False)
+    created_at = Column(DateTime, default=_now)
+
+
 class PlaytestRun(Base):
     """One end-to-end playtest cycle: triage → game → profile → replay → game.
     Persists alongside its reflections so a remote player produces enough

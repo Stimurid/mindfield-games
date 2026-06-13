@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import type { GameGenome } from "../types";
+import { useT } from "../i18n";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 
 interface Counts {
   games: number | null;
@@ -17,6 +19,7 @@ interface Counts {
 const STARTER_GAME = "false_click";
 
 export default function Home() {
+  const t = useT();
   const [games, setGames] = useState<GameGenome[] | null>(null);
   const [counts, setCounts] = useState<Counts>({
     games: null, organs: null, organBanks: null, corpus: null,
@@ -68,13 +71,14 @@ export default function Home() {
     <div className="app">
       <div className="header">
         <h1>Mindfield Games <span className="muted">— Operator Calibration Pack</span></h1>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Link to="/research" className="kbd" style={{ textDecoration: "none", background: "rgba(80,160,80,0.18)" }}>Researcher →</Link>
-          <Link to="/playtest/full-cycle" className="kbd" style={{ textDecoration: "none", background: "rgba(160,120,80,0.18)" }}>Playtest →</Link>
-          <Link to="/library" className="kbd" style={{ textDecoration: "none" }}>Library →</Link>
-          <Link to="/triage" className="kbd" style={{ textDecoration: "none" }}>Triage →</Link>
-          <Link to="/configurator" className="kbd" style={{ textDecoration: "none" }}>Configurator →</Link>
-          <Link to="/operator" className="kbd" style={{ textDecoration: "none" }}>Operator Profile →</Link>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <LanguageSwitcher />
+          <Link to="/research" className="kbd" style={{ textDecoration: "none", background: "rgba(80,160,80,0.18)" }}>{t("Researcher", "Researcher")} →</Link>
+          <Link to="/playtest/full-cycle" className="kbd" style={{ textDecoration: "none", background: "rgba(160,120,80,0.18)" }}>{t("Playtest", "Playtest")} →</Link>
+          <Link to="/library" className="kbd" style={{ textDecoration: "none" }}>{t("Library", "Library")} →</Link>
+          <Link to="/triage" className="kbd" style={{ textDecoration: "none" }}>{t("Triage", "Triage")} →</Link>
+          <Link to="/configurator" className="kbd" style={{ textDecoration: "none" }}>{t("Configurator", "Configurator")} →</Link>
+          <Link to="/operator" className="kbd" style={{ textDecoration: "none" }}>{t("Operator Profile", "Operator Profile")} →</Link>
           <Link to="/admin/materials" className="kbd" style={{ textDecoration: "none", opacity: 0.6 }}>Admin</Link>
         </div>
       </div>
@@ -82,15 +86,43 @@ export default function Home() {
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <div className="card" style={{ borderLeft: "3px solid var(--accent)" }}>
         <p style={{ marginTop: 0, lineHeight: 1.55 }}>
-          Это <b>полевой тренажёр различения</b>, а не игра в обычном смысле. LLM здесь не помощник
-          и не оракул — это игровой орган: <i>прокурор</i> атакует твой выбор, <i>шпаклёвщик</i>
-          подбрасывает гладкие имитации операции, <i>адвокат ростка</i> защищает то, что ты вырезаешь,
-          <i>литералист-чужой</i> читает фразы плоско и теряет регистр.
+          {t(
+            "Это ",
+            "This is a ",
+          )}
+          <b>{t("полевой тренажёр различения", "field trainer of discrimination")}</b>
+          {t(
+            ", а не игра в обычном смысле. LLM здесь не помощник и не оракул — это игровой орган: ",
+            ", not a game in the usual sense. The LLM here is not an assistant and not an oracle — it is a game-organ: ",
+          )}
+          <i>{t("прокурор", "prosecutor")}</i>
+          {t(" атакует твой выбор, ", " attacks your choice, ")}
+          <i>{t("шпаклёвщик", "spackler")}</i>
+          {t(
+            " подбрасывает гладкие имитации операции, ",
+            " plants smooth imitations of operation, ",
+          )}
+          <i>{t("адвокат ростка", "sprout advocate")}</i>
+          {t(
+            " защищает то, что ты вырезаешь, ",
+            " defends what you cut, ",
+          )}
+          <i>{t("литералист-чужой", "literal alien")}</i>
+          {t(
+            " читает фразы плоско и теряет регистр.",
+            " reads phrases flat and loses register.",
+          )}
         </p>
         <p style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.55, fontSize: 14 }}>
-          Игрок формирует операцию различения; исследователь собирает свою игру и записывает гипотезу;
-          модератор запускает протоколированный playtest. Результат — не очки, а <b>качественный
-          Operator Profile</b>: именованные слепоты и связки между жанрами.
+          {t(
+            "Игрок формирует операцию различения; исследователь собирает свою игру и записывает гипотезу; модератор запускает протоколированный playtest. Результат — не очки, а ",
+            "The player forms an operation of discrimination; the researcher assembles their own game and records a hypothesis; the moderator runs a protocolled playtest. The result is not points but a ",
+          )}
+          <b>{t("качественный Operator Profile", "qualitative Operator Profile")}</b>
+          {t(
+            ": именованные слепоты и связки между жанрами.",
+            ": named blindnesses and cross-genre connections.",
+          )}
         </p>
       </div>
 
@@ -106,12 +138,13 @@ export default function Home() {
         <Link to={`/play/${STARTER_GAME}`} style={{ textDecoration: "none", color: "inherit" }}>
           <div className="card" style={{ height: "100%" }}>
             <div className="muted" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
-              для игрока
+              {t("для игрока", "for the player")}
             </div>
-            <h3 style={{ margin: "4px 0" }}>Сыграть одну сессию</h3>
+            <h3 style={{ margin: "4px 0" }}>{t("Сыграть одну сессию", "Play one session")}</h3>
             <div className="muted" style={{ fontSize: 12 }}>
-              Начни с <b>{starter?.short_title ?? "False Click"}</b> — 10 минут. Реальный материал,
-              живая модель.
+              {t("Начни с ", "Start with ")}<b>{starter?.short_title ?? "False Click"}</b>
+              {t(" — 10 минут. Реальный материал, живая модель.",
+                 " — 10 minutes. Real material, live model.")}
             </div>
           </div>
         </Link>
@@ -119,11 +152,12 @@ export default function Home() {
         <Link to="/research" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="card" style={{ height: "100%" }}>
             <div className="muted" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
-              для исследователя
+              {t("для исследователя", "for the researcher")}
             </div>
-            <h3 style={{ margin: "4px 0" }}>Разобраться в инструменте</h3>
+            <h3 style={{ margin: "4px 0" }}>{t("Разобраться в инструменте", "Understand the tool")}</h3>
             <div className="muted" style={{ fontSize: 12 }}>
-              Что это, чего тут НЕТ, как записать гипотезу и атаковать её органами.
+              {t("Что это, чего тут НЕТ, как записать гипотезу и атаковать её органами.",
+                 "What this is, what is NOT here, how to record a hypothesis and attack it with organs.")}
             </div>
           </div>
         </Link>
@@ -131,20 +165,22 @@ export default function Home() {
         <Link to="/configurator" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="card" style={{ height: "100%" }}>
             <div className="muted" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
-              для дизайнера
+              {t("для дизайнера", "for the designer")}
             </div>
-            <h3 style={{ margin: "4px 0" }}>Собрать свою игру</h3>
+            <h3 style={{ margin: "4px 0" }}>{t("Собрать свою игру", "Assemble your own game")}</h3>
             <div className="muted" style={{ fontSize: 12 }}>
-              8 банков органов · GameWeaver валидирует черновик · промотируй и играй сам.
+              {t("8 банков органов · GameWeaver валидирует черновик · промотируй и играй сам.",
+                 "8 organ banks · GameWeaver validates the draft · promote and play.")}
             </div>
           </div>
         </Link>
       </div>
 
       {/* ── Карта: где что лежит ────────────────────────────────────────── */}
-      <h3 style={{ marginTop: 24, marginBottom: 6 }}>Карта инструмента</h3>
+      <h3 style={{ marginTop: 24, marginBottom: 6 }}>{t("Карта инструмента", "Tool map")}</h3>
       <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
-        Это не игра — это инструмент. Шесть рабочих поверхностей. Числа живые, из БД.
+        {t("Это не игра — это инструмент. Шесть рабочих поверхностей. Числа живые, из БД.",
+           "This is not a game, it is a tool. Six working surfaces. Counts are live, from the DB.")}
       </div>
       <div
         style={{
@@ -154,120 +190,125 @@ export default function Home() {
         }}
       >
         <MapCell
-          title="Корпус"
+          title={t("Корпус", "Corpus")}
           count={counts.corpus}
-          unit="записей"
+          unit={t("записей", "entries")}
           to="/library"
           body={
             counts.corpusByKind ? (
               <>
-                {countLine(counts.corpusByKind, "attractor",     "аттракторов")}
-                {countLine(counts.corpusByKind, "r_root",        "R-корней")}
-                {countLine(counts.corpusByKind, "breed",         "пород")}
-                {countLine(counts.corpusByKind, "chimera",       "химер")}
-                {countLine(counts.corpusByKind, "source_card",   "сырых карточек")}
-                {countLine(counts.corpusByKind, "micro_aspect",  "аспектов пород")}
-                {countLine(counts.corpusByKind, "phase_doc",     "документов фаз разработки")}
+                {countLine(counts.corpusByKind, "attractor",     t("аттракторов", "attractors"))}
+                {countLine(counts.corpusByKind, "r_root",        t("R-корней", "R-roots"))}
+                {countLine(counts.corpusByKind, "breed",         t("пород", "breeds"))}
+                {countLine(counts.corpusByKind, "chimera",       t("химер", "chimeras"))}
+                {countLine(counts.corpusByKind, "source_card",   t("сырых карточек", "raw cards"))}
+                {countLine(counts.corpusByKind, "micro_aspect",  t("аспектов пород", "breed aspects"))}
+                {countLine(counts.corpusByKind, "phase_doc",     t("документов фаз разработки", "phase docs"))}
               </>
             ) : null
           }
-          cta="Читать · искать · вызывать органы над записью"
+          cta={t("Читать · искать · вызывать органы над записью",
+                 "Read · search · summon organs on an entry")}
         />
 
         <MapCell
-          title="Банки органов"
+          title={t("Банки органов", "Organ banks")}
           count={counts.organs}
-          unit="органов"
+          unit={t("органов", "organs")}
           to="/configurator"
           body={
             <div className="muted" style={{ fontSize: 12 }}>
-              {counts.organBanks ? `${counts.organBanks} банков: ` : "8 банков: "}
-              поле, объект, действие, LLM-роль, кризис, след, мутация, деградация.
-              Растут от триажа и химер.
+              {counts.organBanks ? `${counts.organBanks} ` : "8 "}
+              {t("банков: поле, объект, действие, LLM-роль, кризис, след, мутация, деградация. Растут от триажа и химер.",
+                 "banks: field, object, action, llm_role, crisis, trace, mutation, degradation. Grow from triage and chimeras.")}
             </div>
           }
-          cta="Открыть конфигуратор"
+          cta={t("Открыть конфигуратор", "Open configurator")}
         />
 
         <MapCell
-          title="Конфигуратор + GameWeaver"
+          title={t("Конфигуратор + GameWeaver", "Configurator + GameWeaver")}
           count={null}
           unit=""
           to="/configurator"
           body={
             <div className="muted" style={{ fontSize: 12 }}>
-              Имя, функция, playable verb, стадия зрелости + чипы из банков.
-              GameWeaver атакует черновик. Промотируешь → играешь.
+              {t("Имя, функция, playable verb, стадия зрелости + чипы из банков. GameWeaver атакует черновик. Промотируешь → играешь.",
+                 "Name, function, playable verb, maturity stage + organ chips. GameWeaver attacks the draft. Promote → play.")}
             </div>
           }
-          cta="Собрать игру"
+          cta={t("Собрать игру", "Assemble a game")}
         />
 
         <MapCell
-          title="Триаж сырого материала"
+          title={t("Триаж сырого материала", "Raw material triage")}
           count={counts.fates}
-          unit="судеб"
+          unit={t("судеб", "fates")}
           to="/triage"
           body={
             <div className="muted" style={{ fontSize: 12 }}>
-              Похоронить · извлечь орган · оставить семенем · сжать до упражнения ·
-              поднять до игры · скрестить · вырастить породу · отложить · запретить.
-              «Извлечь орган» наращивает банк.
+              {t("Похоронить · извлечь орган · оставить семенем · сжать до упражнения · поднять до игры · скрестить · вырастить породу · отложить · запретить. «Извлечь орган» наращивает банк.",
+                 "Bury · extract organ · keep as seed · shrink to exercise · lift to game-exercise · cross · breed · defer to interface · forbid. 'Extract organ' grows the bank.")}
             </div>
           }
-          cta="Открыть очередь"
+          cta={t("Открыть очередь", "Open the queue")}
         />
 
         <MapCell
-          title="Гипотезы исследователя"
+          title={t("Гипотезы исследователя", "Researcher hypotheses")}
           count={null}
           unit=""
           to="/research"
           body={
             <div className="muted" style={{ fontSize: 12 }}>
-              Записать утверждение, атаковать его 4 органами, привязать к черновику игры,
-              превратить в playable форму. Один клик = один ход роли, не чат.
+              {t("Записать утверждение, атаковать его 4 органами, привязать к черновику игры, превратить в playable форму. Один клик = один ход роли, не чат.",
+                 "Record a claim, attack it with 4 organs, link it to a game draft, turn it into a playable form. One click = one organ pass, not a chat.")}
             </div>
           }
-          cta="Открыть верстак"
+          cta={t("Открыть верстак", "Open the workbench")}
         />
 
         <MapCell
-          title="Профиль и playtest"
+          title={t("Профиль и playtest", "Profile and playtest")}
           count={gamesCount}
-          unit="жанров"
+          unit={t("жанров", "genres")}
           to="/operator"
           body={
             <div className="muted" style={{ fontSize: 12 }}>
-              Качественный профиль по сессиям — слепоты, склонности, названные связки между
-              жанрами. Playtest harness фиксирует рефлексии и 24h follow-up для переноса операции.
+              {t("Качественный профиль по сессиям — слепоты, склонности, названные связки между жанрами. Playtest harness фиксирует рефлексии и 24h follow-up для переноса операции.",
+                 "Qualitative profile from sessions — blindnesses, tendencies, named cross-genre connections. Playtest harness records reflections and a 24h follow-up for operation transfer.")}
             </div>
           }
-          cta="Operator Profile · Playtest"
+          cta={t("Operator Profile · Playtest", "Operator Profile · Playtest")}
         />
       </div>
 
       {/* ── Правила сборки: честный код-пойнтер ─────────────────────────── */}
       <div className="card" style={{ marginTop: 12, fontSize: 12 }}>
-        <b>Правила сборки и онтология</b> — стадии зрелости (0–5), словарь судеб триажа,
-        маппинг каноническая роль → runtime-роль, словарь cross-patterns профиля, дефолты
-        банков — сейчас определяются в коде:{" "}
+        <b>{t("Правила сборки и онтология", "Assembly rules and ontology")}</b>
+        {t(
+          " — стадии зрелости (0–5), словарь судеб триажа, маппинг каноническая роль → runtime-роль, словарь cross-patterns профиля, дефолты банков — сейчас определяются в коде: ",
+          " — maturity stages (0–5), triage fate vocabulary, canonical-role → runtime-role mapping, profile cross-pattern vocabulary, bank defaults — are currently defined in code: ",
+        )}
         <code>backend/app/services/organ_seed.py</code>,{" "}
         <code>backend/app/services/genome_promote.py</code>,{" "}
         <code>backend/app/services/operator_profile.py</code>,{" "}
         <code>backend/app/api/triage.py</code>.{" "}
-        UI для их редактирования — отдельный заход. Сейчас правки только через PR.
+        {t("UI для их редактирования — отдельный заход. Сейчас правки только через PR.",
+           "A UI for editing them is a separate pass. For now, changes go only through PRs.")}
       </div>
 
       {/* ── Список 12 жанров ────────────────────────────────────────────── */}
       <h3 style={{ marginTop: 24, marginBottom: 6 }}>
-        Игры <span className="muted" style={{ fontSize: 13, fontWeight: "normal" }}>
-          · {gamesCount ?? "…"} канонических жанров
+        {t("Игры", "Games")} <span className="muted" style={{ fontSize: 13, fontWeight: "normal" }}>
+          · {gamesCount ?? "…"} {t("канонических жанров", "canonical genres")}
         </span>
       </h3>
       <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
-        Реальный материал берётся по умолчанию. LLM-модель — gpt-4.1-mini для большинства,
-        grok-4-0709 для register_sapper и assistant_as_foreign.
+        {t(
+          "Реальный материал берётся по умолчанию. LLM-модель — gpt-4.1-mini для большинства, grok-4-0709 для register_sapper и assistant_as_foreign.",
+          "Real material is selected by default. LLM model — gpt-4.1-mini for most, grok-4-0709 for register_sapper and assistant_as_foreign.",
+        )}
       </div>
 
       {err && <div className="card" style={{ color: "var(--warn)" }}>API error: {err}</div>}
@@ -290,10 +331,11 @@ export default function Home() {
       ))}
 
       <div style={{ marginTop: 24, fontSize: 11, color: "var(--fg-dim)" }}>
-        Под капотом: FastAPI + SQLite + Vite/React. LLM через 302.ai. 12 жанров,
-        130 канонических органов, 4720 записей корпуса, 40 химерных ячеек. RC-0 заморозка
-        нарушена два раза: для researcher workbench и для playtest harness. Подробнее —
-        в <code>docs/releases/MINDFIELD_RC0_FREEZE_2026-06-13.md</code>.
+        {t(
+          "Под капотом: FastAPI + SQLite + Vite/React. LLM через 302.ai. 12 жанров, 130 канонических органов, 4720 записей корпуса, 40 химерных ячеек. RC-0 заморозка нарушена два раза: для researcher workbench и для playtest harness. Подробнее — в ",
+          "Under the hood: FastAPI + SQLite + Vite/React. LLM via 302.ai. 12 genres, 130 canonical organs, 4720 corpus entries, 40 chimera cells. The RC-0 freeze was broken twice: for the researcher workbench and the playtest harness. More in ",
+        )}
+        <code>docs/releases/MINDFIELD_RC0_FREEZE_2026-06-13.md</code>.
       </div>
     </div>
   );
