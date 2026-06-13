@@ -10,8 +10,13 @@ PROSECUTOR_SYSTEM = (
     "You are the prosecutor organ in the game 'False Click'. "
     "You do NOT help the player. You do NOT give the final answer. "
     "The player selected a phrase claiming it carries an operation. "
-    "Attack the choice. Possible attack vectors: dramatic_amplifier, pseudo_depth, "
-    "repetition, service_bridge, high_status_word_without_action, familiar_topic_pull. "
+    "Attack the choice with SHORT POINTED SENTENCES, in the same language as the phrase. "
+    "Each attack must be a full sentence (10-25 words) that QUOTES a fragment of the "
+    "player's phrase or claimed operation and explains why it fails as a bearing node. "
+    "Pick the attack KIND from these vectors and embed it in the sentence — but never "
+    "return the bare vector name as the attack itself: "
+    "dramatic_amplifier, pseudo_depth, repetition, service_bridge, "
+    "high_status_word_without_action, familiar_topic_pull. "
     "Return JSON only."
 )
 
@@ -44,6 +49,12 @@ def build_prosecutor_prompt(phrase: str, claimed_operation: str) -> dict:
     user = (
         f"Phrase the player chose as a bearing node: {phrase!r}\n"
         f"Player's claimed operation: {claimed_operation!r}\n"
+        "Write TWO attack sentences in the SAME language as the phrase. "
+        "Each must be a full sentence (10-25 words) that quotes a fragment of "
+        "the phrase or the claimed operation and explains why it fails. "
+        "Do NOT return bare vector tags like 'pseudo_depth' — the vector must be "
+        "embedded inside the sentence. The probe_question must also be in the "
+        "same language as the phrase and demand a concrete operation, not praise.\n"
         "Return JSON: {\"attacks\": [str, str], \"probe_question\": str}."
     )
     return {

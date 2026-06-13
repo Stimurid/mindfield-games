@@ -10,6 +10,12 @@ interface Props {
 }
 
 const VERDICTS = ["bearing_node", "false_click", "weak_sprout", "service_phrase"] as const;
+const VERDICT_MEANING: Record<string, string> = {
+  bearing_node:   "Стою на своём — операция настоящая, атаки прокурора не валят её",
+  weak_sprout:    "Я был частично прав, но операция слабее, чем я заявил",
+  false_click:    "Признаю — прокурор прав, я кликнул на форму, а не на операцию",
+  service_phrase: "Это вообще соединительный шов, не несущий узел",
+};
 const BIAS_HINTS = ["dramatic_phrase", "abstract_word", "familiar_topic", "pseudo_depth", "conclusion_like_phrase"];
 
 export default function ClickableTextUnits({ genome, material, session, onChange }: Props) {
@@ -109,20 +115,32 @@ export default function ClickableTextUnits({ genome, material, session, onChange
                 </div>
                 {attacks[u.id] && (
                   <div style={{ marginTop: 8, padding: 8, background: "var(--bg)", borderRadius: 4, fontSize: 13 }}>
-                    <div className="llm-role-tag">prosecutor</div>
+                    <div className="llm-role-tag">prosecutor · атакует ваш выбор</div>
                     {attacks[u.id].attacks?.map((a: string, i: number) => (
-                      <div key={i}>• {a}</div>
+                      <div key={i} style={{ marginTop: 4 }}>• {a}</div>
                     ))}
-                    <div style={{ marginTop: 6, fontStyle: "italic" }}>{attacks[u.id].probe_question}</div>
+                    <div style={{ marginTop: 6, fontStyle: "italic", opacity: 0.85 }}>
+                      ? {attacks[u.id].probe_question}
+                    </div>
                   </div>
                 )}
                 {attacks[u.id] && (
                   <div style={{ marginTop: 8 }}>
-                    <label>Финальный вердикт</label>
+                    <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>
+                      Ваш ход после атаки. Это и есть защита — стоите вы на своей операции или признаёте слабость. Текстом отвечать прокурору не нужно.
+                    </div>
+                    <label>Вердикт под давлением</label>
                     <select value={verdicts[u.id] ?? ""} onChange={e => setVerdict(u.id, e.target.value)}>
                       <option value="">—</option>
-                      {VERDICTS.map(v => <option key={v} value={v}>{v}</option>)}
+                      {VERDICTS.map(v => (
+                        <option key={v} value={v}>{v} — {VERDICT_MEANING[v]}</option>
+                      ))}
                     </select>
+                    {verdicts[u.id] && (
+                      <div className="muted" style={{ fontSize: 11, marginTop: 4, fontStyle: "italic" }}>
+                        зафиксировано как {verdicts[u.id]} · войдёт в profile.verdict_distribution
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
