@@ -41,6 +41,15 @@ def test_intervention_accepts_model_override(client):
     assert "attacks" in body["output"] and "probe_question" in body["output"]
 
 
+def test_register_sapper_model_grok_is_listed(client):
+    """Regression: the frontend auto-routes register_sapper to grok-4-0709.
+    If the preset disappears the auto-routing silently fails to mini."""
+    presets = client.get("/api/llm/models").json()["presets"]
+    ids = {p["id"] for p in presets}
+    assert "grok-4-0709" in ids, "register_sapper auto-route depends on this preset"
+    assert "gpt-4.1-mini" in ids, "default for the other 3 games depends on this preset"
+
+
 def test_intervention_works_without_model_field(client):
     mats = client.get("/api/materials?gameId=false_click").json()
     real = next(m for m in mats if m["namespace"] == "real")

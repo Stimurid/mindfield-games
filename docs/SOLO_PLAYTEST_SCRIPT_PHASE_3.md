@@ -1,19 +1,33 @@
 # Solo playtest script — Phase 3 (60 minutes)
 
-One player, one observer, four games on the **real** seeds. Mock LLM is fine; do not require an Anthropic key for the first session.
+One player, one observer, four games on the **real** seeds. Live LLM through 302.ai — see model defaults below.
 
 Observer fills [HUMAN_PLAYTEST_SHEET_PHASE_3.md](HUMAN_PLAYTEST_SHEET_PHASE_3.md) in real time and asks the post-game questions in this script verbatim. **The observer does not coach.** If the player asks "what's the right answer?", reply *"there isn't one — this measures what *you* see"*.
+
+## Model defaults (auto-applied per game)
+
+Based on [LIVE_ROLE_DRIFT_GAUNTLET_302AI.md](LIVE_ROLE_DRIFT_GAUNTLET_302AI.md):
+
+| Game | Default model | Why |
+|---|---|---|
+| False Click | `gpt-4.1-mini` | prosecutor holds cleanly, ~2.4 s/turn |
+| Missing Operation | `gpt-4.1-mini` | spackler holds after Phase 3A patch |
+| Sprout or Slop | `gpt-4.1-mini` | sprout_advocate holds cleanly |
+| Register Sapper | `grok-4-0709` | literal_alien needs grok to stay register-blind, not generic |
+
+The Play page applies these automatically. The LLM dropdown in the header lets the player override; an `active · …` badge shows which model is currently driving the organ. The observer must note any manual switch on the playtest sheet.
 
 ## Setup (5 min)
 
 1. Open two terminals at the repo root.
-2. **Terminal A — backend:**
+2. **Terminal A — backend** (set the 302.ai key into the shell ONCE; do not paste it into any file):
    ```powershell
    cd backend
    .venv\Scripts\Activate.ps1
+   $env:MINDFIELD_LLM_API_KEY = "sk-...your 302.ai key..."
    uvicorn app.main:app --reload --port 8000
    ```
-   Verify `http://localhost:8000/api/health` returns `{"ok": true}`.
+   Verify `http://localhost:8000/api/llm/models` returns both `gpt-4.1-mini` and `grok-4-0709` with `provider: OpenAICompatibleProvider`.
 3. **Terminal B — frontend:**
    ```powershell
    cd frontend
@@ -81,7 +95,7 @@ Specifically note in the sheet whether the player used `no_name` at all, and whe
 
 ## Block 4 — Register Sapper (10 min)
 
-- Player opens **Register Sapper**. Material defaults to real («вы уверены?» × 5 contexts).
+- Player opens **Register Sapper**. Material defaults to real («вы уверены?» × 5 contexts). **The active LLM badge should read `Grok-4` automatically** — this game is auto-routed to `grok-4-0709`. If the observer sees `GPT-4.1 mini` here, the player has manually overridden — note it on the sheet.
 - Per medium tab: assign phrase_action.
 - Compare medium shift: type what changed (addressee, risk, right to reply, tempo).
 - Read literal_alien.

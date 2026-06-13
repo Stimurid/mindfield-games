@@ -6,13 +6,21 @@ One sheet per playtest session. Observer fills in real time while the player run
 **Player code:** ________________  
 **Observer:** ________________  
 **Date:** ________________  
-**LLM mode:** ☐ mock ☐ anthropic  
+**LLM gateway:** 302.ai (live)  
+
+**Per-game model defaults** (Play page auto-applies; player can override):  
+- False Click, Missing Operation, Sprout or Slop → `gpt-4.1-mini`  
+- Register Sapper → `grok-4-0709`  
+
+For each game below, record (a) which model was active when the LLM organ ran, and (b) whether the organ behaviour read as **game-organ / assistant / noise**. Check the badge in the page header marked `active · …`.  
 
 ---
 
 ## Game 1 — False Click
 
 - **Material used:** ☐ `real_false_click_001` ☐ other (which: __________ )
+- **Active LLM model** (from badge): ______________  ☐ matches default ☐ manually overridden by player
+- **Organ behaviour read as:** ☐ game-organ ☐ assistant ☐ noise
 - **Start time:** ______ **End time:** ______
 - **Where the player hesitated** (timestamp + what they stared at — phrase id is fine):
   - 
@@ -42,6 +50,8 @@ One sheet per playtest session. Observer fills in real time while the player run
 ## Game 2 — Missing Operation
 
 - **Material used:** ☐ `real_missing_operation_001` ☐ other (which: __________ )
+- **Active LLM model** (from badge): ______________  ☐ matches default ☐ manually overridden by player
+- **Organ behaviour read as:** ☐ game-organ ☐ assistant ☐ noise
 - **Start time:** ______ **End time:** ______
 - **Where the player hesitated:**
   - 
@@ -69,6 +79,8 @@ One sheet per playtest session. Observer fills in real time while the player run
 ## Game 3 — Sprout or Slop
 
 - **Material used:** ☐ `real_sprout_or_slop_001` ☐ other (which: __________ )
+- **Active LLM model** (from badge): ______________  ☐ matches default ☐ manually overridden by player
+- **Organ behaviour read as:** ☐ game-organ ☐ assistant ☐ noise
 - **Start time:** ______ **End time:** ______
 - **Where the player hesitated** (card id + which zone they hovered):
   - 
@@ -100,6 +112,8 @@ One sheet per playtest session. Observer fills in real time while the player run
 ## Game 4 — Register Sapper
 
 - **Material used:** ☐ `real_register_sapper_001` ☐ other (which: __________ )
+- **Active LLM model** (from badge): ______________  ☐ matches default ☐ manually overridden by player
+- **Organ behaviour read as:** ☐ game-organ ☐ assistant ☐ noise
 - **Start time:** ______ **End time:** ______
 - **Where the player hesitated** (medium tab + what they typed):
   - 
