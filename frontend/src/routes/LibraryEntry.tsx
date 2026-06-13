@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 
 // Minimal markdown renderer — enough for body text from spec.md and phase docs.
@@ -45,14 +45,71 @@ function renderMarkdown(md: string): string {
   return out.join("\n");
 }
 
+type Comment = Awaited<ReturnType<typeof api.libraryComments>>[number];
+
+const ROLE_LABEL: Record<string, string> = {
+  prosecutor: "Атаковать прокурором",
+  spackler: "Заштукатурить",
+  sprout_advocate: "Защитить как росток",
+  literal_alien: "Прочитать буквально",
+};
+
+const ROLE_HINT: Record<string, string> = {
+  prosecutor: "будет бить по записи как по ложному клику",
+  spackler: "подбросит гладкую заплатку поверх записи",
+  sprout_advocate: "будет защищать запись от обвинения в слопе",
+  literal_alien: "прочитает запись плоско, потеряв регистр",
+};
+
+const GAMES: { id: string; label: string }[] = [
+  { id: "false_click",       label: "False Click" },
+  { id: "missing_operation", label: "Missing Operation" },
+  { id: "sprout_or_slop",    label: "Sprout or Slop" },
+  { id: "register_sapper",   label: "Register Sapper" },
+];
+
 export default function LibraryEntry() {
   const { id } = useParams<{ id: string }>();
+  const nav = useNavigate();
   const [entry, setEntry] = useState<any | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [convertBusy, setConvertBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     api.libraryEntry(id).then(setEntry).catch(() => setEntry(null));
+    api.libraryComments(id).then(setComments).catch(() => {});
   }, [id]);
+
+  async function playAs(gameId: string) {
+    if (!id) return;
+    setConvertBusy(gameId);
+    setErr(null);
+    try {
+      const r = await api.convertEntry(id, gameId);
+      nav(`/play/${gameId}?materialId=${r.material_id}`);
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+    } finally {
+      setConvertBusy(null);
+    }
+  }
+
+  async function summon(role: string) {
+    if (!id) return;
+    setBusy(role);
+    setErr(null);
+    try {
+      const c = await api.summonOrgan(id, role);
+      setComments([c, ...comments]);
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+    } finally {
+      setBusy(null);
+    }
+  }
 
   if (!entry) return <div className="app"><div className="muted">Loading…</div></div>;
 
@@ -86,9 +143,63 @@ export default function LibraryEntry() {
         </div>
       )}
 
-      <div className="muted" style={{ fontSize: 11, marginTop: 12, fontStyle: "italic" }}>
-        Phase 8 добавит сюда вызовы LLM-органов (атаковать прокурором / заштукатурить / защитить ростком / прочитать буквально).
-        Phase 9 — кнопки «сыграть как ...» для конверсии в материал.
+      <div className="card" style={{ marginTop: 16 }}>
+        <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
+          Вызвать орган над этой записью. Один клик = один ход роли. Это не чат — давление одностороннее.
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {(["prosecutor", "spackler", "sprout_advocate", "literal_alien"] as const).map(r => (
+            <button
+              key={r}
+              onClick={() => summon(r)}
+              disabled={busy !== null}
+              title={ROLE_HINT[r]}
+            >
+              {busy === r ? "Вызываю…" : ROLE_LABEL[r]}
+            </button>
+          ))}
+        </div>
+        {err && <div style={{ color: "var(--warn)", fontSize: 12, marginTop: 8 }}>{err}</div>}
+      </div>
+
+      {comments.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Записанные ходы органов ({comments.length}):</div>
+          {comments.map(c => (
+            <div key={c.id} className="card" style={{ marginTop: 8, fontSize: 13 }}>
+              <div className="llm-role-tag" style={{ display: "inline-block" }}>{c.role}</div>
+              <span className="muted" style={{ marginLeft: 8, fontSize: 11 }}>{c.model ?? ""} · {c.created_at?.slice(0, 19)}</span>
+              <div style={{ marginTop: 6 }}>
+                {Object.entries(c.output ?? {}).map(([k, v]) => (
+                  <div key={k} style={{ marginTop: 3 }}>
+                    <b>{k}:</b>{" "}
+                    {Array.isArray(v)
+                      ? <ul style={{ margin: "4px 0 0 16px" }}>{(v as string[]).map((x, i) => <li key={i}>{x}</li>)}</ul>
+                      : String(v)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="card" style={{ marginTop: 16 }}>
+        <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
+          Сыграть на материале, выращенном из этой записи. Конвертер переведёт её тему в схему выбранной игры.
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {GAMES.map(g => (
+            <button
+              key={g.id}
+              onClick={() => playAs(g.id)}
+              disabled={convertBusy !== null}
+              className="primary"
+            >
+              {convertBusy === g.id ? "Конвертирую…" : `Сыграть как ${g.label}`}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

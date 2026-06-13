@@ -1,8 +1,13 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Header
+from pydantic import BaseModel
 from sqlalchemy import text, func
 from sqlalchemy.orm import Session
+from typing import Optional
 from ..database import get_db, engine
-from ..models import CorpusEntry, CorpusLink
+from ..models import CorpusEntry, CorpusLink, LibraryComment, Material
+from ..llm.provider import get_provider
+from ..services.corpus_to_material import convert_entry_to_material_payload
+from ..services.replay_mutator import MutatorError
 
 router = APIRouter(prefix="/api/library", tags=["library"])
 
@@ -86,6 +91,123 @@ def get_entry(entry_id: str, db: Session = Depends(get_db)):
         "source_line": e.source_line,
         "parents":  [{"id": p[0].id, "code": p[0].code, "title": p[0].title, "relation": p[1]} for p in parents],
         "children": [{"id": c[0].id, "code": c[0].code, "title": c[0].title, "relation": c[1]} for c in children],
+    }
+
+
+@router.get("/entries/{entry_id}/comments")
+def list_comments(entry_id: str, db: Session = Depends(get_db)):
+    rows = (
+        db.query(LibraryComment)
+        .filter(LibraryComment.entry_id == entry_id)
+        .order_by(LibraryComment.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return [
+        {
+            "id": c.id,
+            "role": c.role,
+            "angle": c.angle,
+            "output": c.output,
+            "model": c.model,
+            "created_at": c.created_at.isoformat() + "Z" if c.created_at else None,
+        }
+        for c in rows
+    ]
+
+
+class SummonRequest(BaseModel):
+    role: str
+    angle: Optional[str] = None
+    model: Optional[str] = None
+
+
+def _context_for_role(role: str, entry_title: str, body: str, angle: str | None) -> dict:
+    text_for_role = f"{entry_title}\n\n{body[:1500]}"
+    if role == "prosecutor":
+        return {"phrase": text_for_role, "claimed_operation": angle or "claims a discriminating operation"}
+    if role == "spackler":
+        return {"gap_context": text_for_role, "absence_type": angle or "logical"}
+    if role == "sprout_advocate":
+        return {"card_text": text_for_role, "fate": angle or "incubate"}
+    if role == "literal_alien":
+        return {"phrase": text_for_role, "medium": angle or "archival_text"}
+    raise HTTPException(400, f"unsupported role {role}")
+
+
+@router.post("/entries/{entry_id}/summon")
+def summon_organ(
+    entry_id: str,
+    payload: SummonRequest,
+    db: Session = Depends(get_db),
+    x_player_token: str | None = Header(default=None, alias="X-Player-Token"),
+):
+    e = db.query(CorpusEntry).filter(CorpusEntry.id == entry_id).first()
+    if not e:
+        raise HTTPException(404, "no such corpus entry")
+    if payload.role not in {"prosecutor", "spackler", "sprout_advocate", "literal_alien"}:
+        raise HTTPException(400, "role must be one of prosecutor/spackler/sprout_advocate/literal_alien")
+    ctx = _context_for_role(payload.role, e.title, e.body_md, payload.angle)
+    provider = get_provider()
+    out = provider.call_role(payload.role, ctx, model=payload.model)
+    spec = out.pop("_prompt_spec", None)
+    out.pop("_role", None)
+    used_model = out.pop("_model", None) or provider.default_model
+    comment = LibraryComment(
+        entry_id=e.id,
+        role=payload.role,
+        angle=payload.angle,
+        output=out,
+        player_token=x_player_token,
+        model=used_model,
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return {
+        "id": comment.id,
+        "role": comment.role,
+        "angle": comment.angle,
+        "output": comment.output,
+        "model": comment.model,
+        "created_at": comment.created_at.isoformat() + "Z" if comment.created_at else None,
+    }
+
+
+class ConvertRequest(BaseModel):
+    game_id: str
+    model: Optional[str] = None
+
+
+@router.post("/entries/{entry_id}/convert")
+def convert_entry_to_material(
+    entry_id: str,
+    payload: ConvertRequest,
+    db: Session = Depends(get_db),
+):
+    e = db.query(CorpusEntry).filter(CorpusEntry.id == entry_id).first()
+    if not e:
+        raise HTTPException(404, "no such corpus entry")
+    try:
+        new_title, new_payload = convert_entry_to_material_payload(e, payload.game_id, model=payload.model)
+    except MutatorError as err:
+        raise HTTPException(502, f"converter failure: {err}")
+    mat = Material(
+        game_id=payload.game_id,
+        title=new_title,
+        namespace="from_corpus",
+        payload=new_payload,
+        source_corpus_id=e.id,
+    )
+    db.add(mat)
+    db.commit()
+    db.refresh(mat)
+    return {
+        "material_id": mat.id,
+        "game_id": mat.game_id,
+        "title": mat.title,
+        "namespace": mat.namespace,
+        "source_corpus_id": e.id,
     }
 
 

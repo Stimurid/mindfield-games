@@ -75,6 +75,20 @@ export const api = {
     fetch(`${BASE}/api/library/entries/${id}`).then(j<{ id: string; code: string; kind: string; title: string; body_md: string; source_pass: string; source_line: number | null; parents: any[]; children: any[] }>),
   librarySearch: (q: string, kind?: string) =>
     fetch(`${BASE}/api/library/search?q=${encodeURIComponent(q)}${kind ? `&kind=${kind}` : ""}`).then(j<{ id: string; code: string; kind: string; title: string; snippet: string }[]>),
+  libraryComments: (entryId: string) =>
+    fetch(`${BASE}/api/library/entries/${entryId}/comments`).then(j<{ id: string; role: string; angle: string | null; output: any; model: string | null; created_at: string | null }[]>),
+  convertEntry: (entryId: string, gameId: string, model?: string) =>
+    fetch(`${BASE}/api/library/entries/${entryId}/convert`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify({ game_id: gameId, model }),
+    }).then(j<{ material_id: string; game_id: string; title: string; namespace: string; source_corpus_id: string }>),
+  summonOrgan: (entryId: string, role: string, angle?: string, model?: string) =>
+    fetch(`${BASE}/api/library/entries/${entryId}/summon`, {
+      method: "POST",
+      headers: tokHeaders(),
+      body: JSON.stringify({ role, angle, model }),
+    }).then(j<{ id: string; role: string; angle: string | null; output: any; model: string | null; created_at: string | null }>),
   complete: (sid: string) =>
     fetch(`${BASE}/api/sessions/${sid}/complete`, { method: "POST" }).then(j<GameSession>),
   exportMd: (sid: string) =>

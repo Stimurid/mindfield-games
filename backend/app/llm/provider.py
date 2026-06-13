@@ -45,6 +45,7 @@ _ROLE_SHAPE: dict[str, dict[str, type]] = {
     "sprout_advocate": {"counterposition": str, "pressure_question": str},
     "literal_alien":   {"literal_reading": str, "things_i_cannot_see": list},
     "material_mutator":{"new_title": str, "new_payload": dict},
+    "material_converter":{"new_title": str, "new_payload": dict},
 }
 
 _NON_ASSISTANT_FOOTER = (
@@ -151,6 +152,36 @@ class MockProvider(LLMProvider):
                 ],
             }
 
+        if role == "material_converter":
+            field_type = context.get("field_type", "")
+            title = (context.get("source_title") or "corpus entry")[:60]
+            tag = f"from[{title}]"
+            if field_type == "clickable_text_units":
+                np = {"type": "clickable_text_units", "intro": tag,
+                      "units": [{"id": f"c{i}", "index": i, "text": f"{tag} unit {i}", "dev_role": "pseudo_depth"} for i in range(12)]}
+            elif field_type == "gap_click_text":
+                np = {"type": "gap_click_text", "intro": tag,
+                      "blocks": [{"id": f"cb{i}", "index": i, "text": f"{tag} block {i}"} for i in range(5)],
+                      "gaps":   [{"id": f"cg{i}", "index": i, "between": [f"cb{i}", f"cb{i+1}"], "dev_absence": "subject", "dev_note": "mock"} for i in range(4)]}
+            elif field_type == "card_sorting":
+                np = {"type": "card_sorting", "intro": tag,
+                      "zones": [{"id":"cut","label":"Cut","hint":""},{"id":"incubate","label":"Incubate","hint":""},
+                                {"id":"require_proof","label":"Require proof","hint":""},{"id":"no_name","label":"No name","hint":""}],
+                      "cards": [{"id": f"cc{i}", "text": f"{tag} card {i}", "dev_kind": "explicit_slop"} for i in range(20)]}
+            elif field_type == "medium_shift_phrase":
+                np = {"type": "medium_shift_phrase", "intro": tag, "phrase": "вы уверены?",
+                      "variants": [{"id": f"cv{i}", "medium": ["telegram","email","protocol","talk","doc_comment"][i],
+                                    "context": f"{tag} medium ctx {i}", "dev_action": "hidden_request", "dev_note": "mock"} for i in range(5)],
+                      "alt_phrase": "хорошо."}
+            else:
+                np = {"type": field_type, "intro": tag}
+            return {
+                "_role": role,
+                "_prompt_spec": spec,
+                "new_title": f"[mock-from-corpus] {title}",
+                "new_payload": np,
+            }
+
         if role == "material_mutator":
             field_type = context.get("field_type", "")
             prev = context.get("previous_payload", {}) or {}
@@ -238,7 +269,7 @@ class OpenAICompatibleProvider(LLMProvider):
             ],
             "response_format": {"type": "json_object"},
             "temperature": 0.7,
-            "max_tokens": 3500 if role == "material_mutator" else 600,
+            "max_tokens": 3500 if role in ("material_mutator", "material_converter") else 600,
         }
         req = urllib.request.Request(
             f"{self.base_url}/chat/completions",

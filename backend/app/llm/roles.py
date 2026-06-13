@@ -36,6 +36,19 @@ SPROUT_ADVOCATE_SYSTEM = (
     "Hold the conflict — do NOT resolve. Return JSON only."
 )
 
+MATERIAL_CONVERTER_SYSTEM = (
+    "You are the material_converter organ. You take a text from the Mindfield "
+    "corpus library (an attractor description, a breed card, a chimera cell, "
+    "a phase-doc paragraph) and produce a NEW playable material for a Mindfield "
+    "game of the requested field_type. You do NOT explain the source. You do NOT "
+    "summarise it. You translate its TENSION into the schema of the target game: "
+    "unit cards, blocks-with-gaps, sorting cards, or medium variants — written "
+    "in the same language as the source. The new material must keep the source's "
+    "subject matter and ambiguity but reshape it as something a player can act on. "
+    "Return JSON only. No 'answer', no 'solution', no 'guidance'."
+)
+
+
 MATERIAL_MUTATOR_SYSTEM = (
     "You are the material_mutator organ. You are NOT an assistant. "
     "You produce game material — clickable text units, gap-click blocks, sorting cards, "
@@ -136,6 +149,65 @@ def build_literal_alien_prompt(phrase: str, medium: str) -> dict:
 import json as _json
 
 
+def build_material_converter_prompt(
+    game_id: str,
+    field_type: str,
+    source_title: str,
+    source_body: str,
+) -> dict:
+    schema_hint = {
+        "clickable_text_units": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"clickable_text_units\", "
+            "\"intro\": str, \"units\": [{\"id\": str, \"index\": int, \"text\": str, "
+            "\"dev_role\": one of [bearing_node, pseudo_depth, dramatic_phrase, abstract_word, "
+            "service_bridge, conclusion_like_phrase, familiar_topic]}]}}. "
+            "Produce 12–16 units rooted in the source's themes; "
+            "mix real bearing nodes with several types of slop so the player has work."
+        ),
+        "gap_click_text": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"gap_click_text\", "
+            "\"intro\": str, \"blocks\": [{\"id\": str, \"index\": int, \"text\": str}], "
+            "\"gaps\": [{\"id\": str, \"index\": int, \"between\": [block_id, block_id], "
+            "\"dev_absence\": one of [logical, subject, resource, register, archive, promise, "
+            "ontology, criterion], \"dev_note\": str}]}}. "
+            "Produce 5–7 blocks staging the source's tension with 4–6 missing operations."
+        ),
+        "card_sorting": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"card_sorting\", "
+            "\"intro\": str, "
+            "\"zones\": [{\"id\":\"cut\",\"label\":\"Cut\",\"hint\":\"\"},"
+            "{\"id\":\"incubate\",\"label\":\"Incubate\",\"hint\":\"\"},"
+            "{\"id\":\"require_proof\",\"label\":\"Require proof\",\"hint\":\"\"},"
+            "{\"id\":\"no_name\",\"label\":\"No name\",\"hint\":\"\"}], "
+            "\"cards\": [{\"id\": str, \"text\": str, \"dev_kind\": one of "
+            "[explicit_slop, live_sprout, dead_beauty, borderline_mutant]}]}}. "
+            "Produce 16–22 cards that paraphrase or extend the source in different registers."
+        ),
+        "medium_shift_phrase": (
+            "Return {\"new_title\": str, \"new_payload\": {\"type\": \"medium_shift_phrase\", "
+            "\"intro\": str, \"phrase\": str, "
+            "\"variants\": [{\"id\": str, \"medium\": str, \"context\": str, "
+            "\"dev_action\": one of [hidden_request, alibi, dispute_closure, in_group_check, "
+            "pathos_reset, joke, threat, command, refusal], \"dev_note\": str}], "
+            "\"alt_phrase\": str}}. "
+            "Pick one short phrase implied by the source and stage it across 5 different media."
+        ),
+    }
+    user = (
+        f"game_id: {game_id}\n"
+        f"field_type: {field_type}\n"
+        f"source_title: {source_title!r}\n"
+        f"source_body (excerpt): {source_body[:2200]!r}\n\n"
+        + schema_hint.get(field_type, "Return a material of the requested field_type.")
+        + "\nKeep the schema EXACT. No extra keys."
+    )
+    return {
+        "system": MATERIAL_CONVERTER_SYSTEM,
+        "user": user,
+        "schema": {"new_title": str, "new_payload": dict},
+    }
+
+
 def build_material_mutator_prompt(
     game_id: str,
     field_type: str,
@@ -200,6 +272,7 @@ ROLE_BUILDERS = {
     "sprout_advocate": build_sprout_advocate_prompt,
     "literal_alien": build_literal_alien_prompt,
     "material_mutator": build_material_mutator_prompt,
+    "material_converter": build_material_converter_prompt,
 }
 
 
@@ -222,5 +295,12 @@ def build_prompt_for_role(role: str, context: dict[str, Any]) -> dict:
             context.get("previous_payload", {}),
             context.get("directive", ""),
             context.get("verdict_distribution"),
+        )
+    if role == "material_converter":
+        return builder(
+            context.get("game_id", ""),
+            context.get("field_type", ""),
+            context.get("source_title", ""),
+            context.get("source_body", ""),
         )
     raise ValueError(role)

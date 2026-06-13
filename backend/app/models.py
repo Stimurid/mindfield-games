@@ -78,6 +78,20 @@ class CorpusEntry(Base):
     created_at = Column(DateTime, default=_now)
 
 
+class LibraryComment(Base):
+    """One organ pass over a corpus entry. NOT a chat — single shot. Persisted
+    so the entry view shows the accumulated pressure from previous players."""
+    __tablename__ = "library_comments"
+    id = Column(String, primary_key=True, default=_uuid)
+    entry_id = Column(String, ForeignKey("corpus_entries.id"), index=True, nullable=False)
+    role = Column(String, nullable=False)  # prosecutor | spackler | sprout_advocate | literal_alien
+    angle = Column(String, nullable=True)  # player-picked angle (verdict tag / absence_type / fate / medium)
+    output = Column(JSON, nullable=False)
+    player_token = Column(String, nullable=True, index=True)
+    model = Column(String, nullable=True)
+    created_at = Column(DateTime, default=_now)
+
+
 class CorpusLink(Base):
     """Directed link between corpus entries. relation = derived_from |
     chimera_cross | refined | discussed_in.
