@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -26,8 +27,36 @@ def seed_materials_if_empty():
         db.close()
 
 
+def _run_startup():
+    init_db()
+    from .services.migrations import run_migrations
+    applied = run_migrations()
+    if applied:
+        print(f"[migrations] applied: {applied}")
+    load_all_genomes()
+    seed_materials_if_empty()
+    from .services.corpus_ingest import ingest_corpus_if_needed
+    result = ingest_corpus_if_needed()
+    if result.get("ingested"):
+        print(f"[corpus] ingested {result['ingested']} entries (total {result.get('total')})")
+    from .services.organ_seed import seed_organs_if_empty
+    org_result = seed_organs_if_empty()
+    if org_result.get("added"):
+        print(f"[organs] seeded {org_result['added']} canonical organs (total {org_result.get('total')})")
+    from .services.maturity import backfill_default_maturity
+    mat_result = backfill_default_maturity()
+    if mat_result.get("applied"):
+        print(f"[maturity] backfilled {mat_result['applied']} corpus entries")
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    _run_startup()
+    yield
+
+
 def create_app() -> FastAPI:
-    app = FastAPI(title="Mindfield Games — LLM Game Field Runtime")
+    app = FastAPI(title="Mindfield Games — LLM Game Field Runtime", lifespan=_lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -35,28 +64,6 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    @app.on_event("startup")
-    def startup():
-        init_db()
-        from .services.migrations import run_migrations
-        applied = run_migrations()
-        if applied:
-            print(f"[migrations] applied: {applied}")
-        load_all_genomes()
-        seed_materials_if_empty()
-        from .services.corpus_ingest import ingest_corpus_if_needed
-        result = ingest_corpus_if_needed()
-        if result.get("ingested"):
-            print(f"[corpus] ingested {result['ingested']} entries (total {result.get('total')})")
-        from .services.organ_seed import seed_organs_if_empty
-        org_result = seed_organs_if_empty()
-        if org_result.get("added"):
-            print(f"[organs] seeded {org_result['added']} canonical organs (total {org_result.get('total')})")
-        from .services.maturity import backfill_default_maturity
-        mat_result = backfill_default_maturity()
-        if mat_result.get("applied"):
-            print(f"[maturity] backfilled {mat_result['applied']} corpus entries")
 
     app.include_router(games.router)
     app.include_router(sessions.router)

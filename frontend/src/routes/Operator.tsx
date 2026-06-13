@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { useT } from "../i18n";
 
 type Profile = Awaited<ReturnType<typeof api.getOperatorProfile>>;
 
@@ -12,6 +13,7 @@ const GAME_LABEL: Record<string, string> = {
 };
 
 export default function Operator() {
+  const t = useT();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -19,16 +21,16 @@ export default function Operator() {
     api.getOperatorProfile().then(setProfile).catch(e => setErr(String(e?.message ?? e)));
   }, []);
 
-  if (err) return <div className="app"><Link to="/">← все игры</Link><div className="card" style={{ color: "var(--warn)" }}>{err}</div></div>;
+  if (err) return <div className="app"><Link to="/">← {t("все игры", "all games")}</Link><div className="card" style={{ color: "var(--warn)" }}>{err}</div></div>;
   if (!profile) return <div className="app"><div className="muted">Loading…</div></div>;
 
   return (
     <div className="app">
       <div className="header">
-        <Link to="/">← все игры</Link>
+        <Link to="/">← {t("все игры", "all games")}</Link>
       </div>
 
-      <h2>Operator Profile <span className="muted" style={{ fontSize: 14 }}>· сквозной портрет по жанрам</span></h2>
+      <h2>Operator Profile <span className="muted" style={{ fontSize: 14 }}>· {t("сквозной портрет по жанрам", "cross-genre portrait")}</span></h2>
 
       <div className="card">
         <div className="muted" style={{ fontSize: 12 }}>{profile.coverage}</div>
@@ -36,7 +38,7 @@ export default function Operator() {
 
         {profile.cross_patterns.length > 0 && (
           <div style={{ marginTop: 16, padding: 12, background: "var(--bg)", borderRadius: 4, borderLeft: "3px solid var(--accent)" }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Связки между играми:</div>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>{t("Связки между играми:", "Connections between games:")}</div>
             {profile.cross_patterns.map((p, i) => (
               <div key={i} style={{ marginTop: 6, fontSize: 13 }}>· {p}</div>
             ))}
@@ -53,7 +55,7 @@ export default function Operator() {
         )}
       </div>
 
-      <h3 style={{ marginTop: 24 }}>Сессии</h3>
+      <h3 style={{ marginTop: 24 }}>{t("Сессии", "Sessions")}</h3>
       {profile.games_played.length === 0 && (
         <div className="muted">Ни одна игра ещё не пройдена. Начни с любой — потом сюда соберётся карта.</div>
       )}

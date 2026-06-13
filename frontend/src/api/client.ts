@@ -151,6 +151,26 @@ export const api = {
     }).then(j<any>),
   adminDeleteMaterial: (id: string) =>
     fetch(`${BASE}/api/admin/materials/${id}`, { method: "DELETE" }).then(j<{ deleted: string }>),
+  adminListOrgans: (bank?: string) =>
+    fetch(`${BASE}/api/admin/organs${bank ? `?bank=${bank}` : ""}`).then(j<any[]>),
+  adminCreateOrgan: (payload: { bank: string; name: string; description?: string }) =>
+    fetch(`${BASE}/api/admin/organs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  adminUpdateOrgan: (id: string, payload: any) =>
+    fetch(`${BASE}/api/admin/organs/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(j<any>),
+  adminDeleteOrgan: (id: string) =>
+    fetch(`${BASE}/api/admin/organs/${id}`, { method: "DELETE" }).then(j<{ deleted: string }>),
+  adminOntologyFates: () =>
+    fetch(`${BASE}/api/admin/ontology/fates`).then(j<{ fates: { fate: string; label: string }[]; source_file: string; editable: boolean }>),
+  adminOntologyCrossPatterns: () =>
+    fetch(`${BASE}/api/admin/ontology/cross-patterns`).then(j<{ patterns: { name: string; needed_dimensions: { game_id: string; value: string }[] }[]; bias_meanings: { game_id: string; value: string; meaning: string }[]; source_file: string; editable: boolean }>),
   // Research
   researchListHypotheses: (mine = true) =>
     fetch(`${BASE}/api/research/hypotheses?mine=${mine}`, { headers: { "X-Player-Token": getPlayerToken() } }).then(j<any[]>),

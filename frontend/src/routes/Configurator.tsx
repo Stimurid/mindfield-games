@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { useT } from "../i18n";
 
 type Bank = { bank: string; label: string; hint: string; count: number; is_degradation: boolean };
 type Organ = { id: string; bank: string; name: string };
@@ -16,6 +17,7 @@ type Verdict = {
 const STAGE_LABEL = ["0 сырой фрагмент", "1 упражнение", "2 игра-упражнение", "3 психотехническая игра", "4 коэволюционный симулятор", "5 школа/платформа"];
 
 export default function Configurator() {
+  const t = useT();
   const nav = useNavigate();
   const [fieldTypes, setFieldTypes] = useState<{ id: string; label: string }[]>([]);
   const [promoteFieldType, setPromoteFieldType] = useState<string>("clickable_text_units");
@@ -156,8 +158,8 @@ export default function Configurator() {
   return (
     <div className="app">
       <div className="header">
-        <Link to="/">← все игры</Link>
-        <span className="muted">Конфигуратор · GameWeaver</span>
+        <Link to="/">← {t("все игры", "all games")}</Link>
+        <span className="muted">{t("Конфигуратор · GameWeaver", "Configurator · GameWeaver")}</span>
       </div>
 
       <h2>Configurator</h2>
@@ -235,17 +237,17 @@ export default function Configurator() {
       })}
 
       <div className="actions-bar" style={{ marginTop: 12, flexWrap: "wrap" }}>
-        <button onClick={saveDraft} disabled={busy}>{currentDraftId ? "Сохранить" : "Создать черновик"}</button>
-        <button className="primary" onClick={runWeaver} disabled={busy}>{busy ? "GameWeaver работает…" : "Прогнать через GameWeaver"}</button>
-        {currentDraftId && <button onClick={resetForm}>Новый</button>}
+        <button onClick={saveDraft} disabled={busy}>{currentDraftId ? t("Сохранить", "Save") : t("Создать черновик", "Create draft")}</button>
+        <button className="primary" onClick={runWeaver} disabled={busy}>{busy ? t("GameWeaver работает…", "GameWeaver running…") : t("Прогнать через GameWeaver", "Run GameWeaver")}</button>
+        {currentDraftId && <button onClick={resetForm}>{t("Новый", "New")}</button>}
         {currentDraftId && (
           <span style={{ display: "flex", gap: 6, alignItems: "center", marginLeft: 12 }}>
-            <span className="muted" style={{ fontSize: 12 }}>промотировать как:</span>
+            <span className="muted" style={{ fontSize: 12 }}>{t("промотировать как:", "promote as:")}</span>
             <select value={promoteFieldType} onChange={e => setPromoteFieldType(e.target.value)}>
               {fieldTypes.map(ft => <option key={ft.id} value={ft.id}>{ft.label}</option>)}
             </select>
             <button onClick={promote} disabled={busy} style={{ background: "rgba(80,160,80,0.25)" }}>
-              Промотировать и сыграть
+              {t("Промотировать и сыграть", "Promote and play")}
             </button>
           </span>
         )}

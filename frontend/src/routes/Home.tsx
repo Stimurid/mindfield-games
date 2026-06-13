@@ -80,6 +80,7 @@ export default function Home() {
           <Link to="/configurator" className="kbd" style={{ textDecoration: "none" }}>{t("Configurator", "Configurator")} →</Link>
           <Link to="/operator" className="kbd" style={{ textDecoration: "none" }}>{t("Operator Profile", "Operator Profile")} →</Link>
           <Link to="/admin/materials" className="kbd" style={{ textDecoration: "none", opacity: 0.6 }}>Admin</Link>
+          <Link to="/admin/ontology" className="kbd" style={{ textDecoration: "none", opacity: 0.6 }}>Ontology</Link>
         </div>
       </div>
 
