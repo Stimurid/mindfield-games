@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# /opt/mindfield/bin/backup — timestamped tarball of SQLite + compose. Keeps last 10.
+set -euo pipefail
+ROOT="/opt/mindfield"
+BK_DIR="${ROOT}/backups"
+LOG="${ROOT}/logs/backup.log"
+mkdir -p "$BK_DIR" "${ROOT}/logs"
+
+stamp=$(date '+%Y%m%d-%H%M%S')
+out="${BK_DIR}/mindfield-${stamp}.tar.gz"
+
+tar -czf "$out" \
+    -C "$ROOT" data docker-compose.yml \
+    2>>"$LOG"
+
+ls -1t "$BK_DIR"/mindfield-*.tar.gz | tail -n +11 | xargs -r rm -f
+echo "[$(date '+%F %T')] backup: ${out} ($(du -h "$out" | awk '{print $1}'))" | tee -a "$LOG"

@@ -1,0 +1,42 @@
+# /opt/mindfield/docker-compose.yml
+#
+# Two services on the SHARED moderbober_default network. Caddy on the VM
+# does TLS + basic_auth and reverse-proxies mindfield.mindkampf.ru/api/*
+# to mindfield-api:8000 and the rest to mindfield-static:80.
+#
+# Secrets: /opt/mindfield/secrets/api.env holds MINDFIELD_LLM_API_KEY.
+# Data:    /opt/mindfield/data/mindfield.db is the SQLite store.
+#
+# Build context is the repo at /opt/mindfield/repo. Recreate after deploy:
+#   cd /opt/mindfield && docker compose up -d --build
+
+services:
+  api:
+    container_name: mindfield-api
+    build:
+      context: /opt/mindfield/repo/backend
+    restart: unless-stopped
+    env_file:
+      - /opt/mindfield/secrets/api.env
+    environment:
+      MINDFIELD_LLM: openai_compatible
+      MINDFIELD_LLM_API_BASE: https://api.302.ai/v1
+      MINDFIELD_DB: /data/mindfield.db
+    volumes:
+      - /opt/mindfield/data:/data
+    networks:
+      - moderbober_default
+
+  static:
+    container_name: mindfield-static
+    build:
+      context: /opt/mindfield/repo/frontend
+    restart: unless-stopped
+    networks:
+      - moderbober_default
+    depends_on:
+      - api
+
+networks:
+  moderbober_default:
+    external: true

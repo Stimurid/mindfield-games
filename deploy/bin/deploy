@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# /opt/mindfield/bin/deploy — production deploy for Mindfield Games.
+#
+# Run by GitHub Actions or manually via SSH. Same pattern as Quinta's
+# deploy script but with two containers (api + static) built locally
+# and a SQLite volume that must NOT be wiped between deploys.
+#
+# Usage:
+#   /opt/mindfield/bin/deploy          # normal deploy
+#   /opt/mindfield/bin/deploy --dry    # show plan, do nothing
+
+set -euo pipefail
+
+ROOT="/opt/mindfield"
+REPO_DIR="${ROOT}/repo"
+DATA_DIR="${ROOT}/data"
+SECRETS_DIR="${ROOT}/secrets"
+LOG_DIR="${ROOT}/logs"
+COMPOSE_FILE="${ROOT}/docker-compose.yml"
+API_C="mindfield-api"
+WEB_C="mindfield-static"
+DOMAIN="mindfield.mindkampf.ru"
+
+DRY=false
+[[ "${1:-}" == "--dry" ]] && DRY=true
+
+ts()  { date '+%Y-%m-%d %H:%M:%S'; }
+log() { local m="[$(ts)] $*"; echo "$m"; echo "$m" >> "${LOG_DIR}/deploy.log"; }
+die() { log "FATAL: $*"; exit 1; }
+
+[[ -d "$REPO_DIR" ]]    || die "Repo dir not found: ${REPO_DIR}"
+[[ -d "$DATA_DIR" ]]    || die "Data dir not found: ${DATA_DIR}"
+[[ -d "$SECRETS_DIR" ]] || die "Secrets dir not found: ${SECRETS_DIR}"
+[[ -f "${SECRETS_DIR}/api.env" ]] || die "Missing ${SECRETS_DIR}/api.env (MINDFIELD_LLM_API_KEY=...)"
+[[ -f "$COMPOSE_FILE" ]] || die "Missing ${COMPOSE_FILE}"
+mkdir -p "$LOG_DIR"
+
+log "=== Deploy started · dry=${DRY} ==="
+
+# 1. Pull
+cd "$REPO_DIR"
+BEFORE=$(git rev-parse --short HEAD 2>/dev/null || echo none)
+log "  current: ${BEFORE}"
+if ! $DRY; then
+  git fetch origin
+  git reset --hard origin/main
+fi
+AFTER=$(git rev-parse --short HEAD 2>/dev/null || echo none)
+log "  after  : ${AFTER}"
+
+# 2. Build & recreate containers (compose will rebuild only what changed)
+log "Step 2: docker compose up -d --build"
+if ! $DRY; then
+  cd "$ROOT"
+  docker compose up -d --build 2>&1 | tail -20
+fi
+
+# 3. Healthchecks
+log "Step 3: healthchecks"
+sleep 4
+
+# Local API check via the api container directly
+LOCAL_API=$(docker exec "${API_C}" curl -sf -o /dev/null -w '%{http_code}' http://localhost:8000/api/games 2>/dev/null || echo fail)
+if [[ "$LOCAL_API" == "200" ]]; then
+  log "  api local : OK (200)"
+else
+  die "api local failed (${LOCAL_API}) — check 'docker logs ${API_C}'"
+fi
+
+# Local static check
+LOCAL_WEB=$(docker exec "${WEB_C}" wget -qO- -S http://localhost/ 2>&1 | grep -c "HTTP/1.1 200" || true)
+if [[ "$LOCAL_WEB" -ge 1 ]]; then
+  log "  web local : OK"
+else
+  die "web local failed — check 'docker logs ${WEB_C}'"
+fi
+
+# Edge: Caddy must answer 401 (basic_auth) without creds
+EDGE=$(curl -sf -o /dev/null -w '%{http_code}' "https://${DOMAIN}/" 2>/dev/null || echo no)
+if [[ "$EDGE" == "401" ]]; then
+  log "  edge      : OK (401, basic_auth gate alive)"
+elif [[ "$EDGE" == "200" ]]; then
+  log "  edge WARN : 200 without auth — Caddy basicauth block may be misconfigured"
+else
+  log "  edge WARN : ${EDGE} — Caddy block may be missing for ${DOMAIN}"
+fi
+
+# 4. Provider sanity — verify backend can hit 302.ai with the env_file key
+log "Step 4: provider sanity (no tokens consumed for game list)"
+PROV=$(docker exec "${API_C}" curl -sf http://localhost:8000/api/llm/models 2>/dev/null | head -c 400 || echo fail)
+log "  /api/llm/models : ${PROV}"
+
+log "=== Deploy complete · ${BEFORE} -> ${AFTER} ==="

@@ -1,0 +1,40 @@
+# Deploy Mindfield to production VM (moderbober-prod-01).
+# Triggers: push to main, manual dispatch.
+# Required GitHub secrets (same VM as Quinta):
+#   PROD_HOST    = 81.26.176.248
+#   PROD_USER    = deploy
+#   PROD_SSH_KEY = private key for the deploy user
+#   PROD_PORT    = (optional, default 22)
+name: Deploy Mindfield
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-mindfield
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_PORT || 22 }}
+          script_stop: true
+          script: |
+            echo "=== Mindfield deploy triggered ==="
+            echo "Commit: ${{ github.sha }}"
+            echo "Actor:  ${{ github.actor }}"
+            echo ""
+            /opt/mindfield/bin/deploy
+            echo ""
+            /opt/mindfield/bin/status --short

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# /opt/mindfield/bin/status — one-shot health check
+set -euo pipefail
+ROOT="/opt/mindfield"
+API_C="mindfield-api"
+WEB_C="mindfield-static"
+DOMAIN="mindfield.mindkampf.ru"
+
+short=false
+[[ "${1:-}" == "--short" ]] && short=true
+
+cd "$ROOT/repo" 2>/dev/null && COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "?") || COMMIT="?"
+
+api_state=$(docker inspect -f '{{.State.Status}}' "$API_C" 2>/dev/null || echo missing)
+web_state=$(docker inspect -f '{{.State.Status}}' "$WEB_C" 2>/dev/null || echo missing)
+db_size=$(du -h "$ROOT/data/mindfield.db" 2>/dev/null | awk '{print $1}' || echo "?")
+edge_code=$(curl -sf -o /dev/null -w '%{http_code}' "https://${DOMAIN}/" 2>/dev/null || echo "?")
+
+if $short; then
+  echo "commit=${COMMIT} api=${api_state} web=${web_state} edge=${edge_code} db=${db_size}"
+  exit 0
+fi
+
+cat <<EOF
+Mindfield · ${DOMAIN}
+  commit       : ${COMMIT}
+  api container: ${api_state}
+  web container: ${web_state}
+  sqlite size  : ${db_size}
+  edge (https) : ${edge_code} (expect 401 without basic_auth)
+EOF

@@ -1,0 +1,22 @@
+# Append this block to /opt/moderbober/Caddyfile, then `docker exec
+# moderbober-caddy caddy reload --config /etc/caddy/Caddyfile`.
+#
+# basicauth credentials must match the moderbober/quinta/whitecrow accounts —
+# replace <bcrypt-hash> with the same hash already used for those sites.
+
+mindfield.mindkampf.ru {
+    basicauth * {
+        timur <bcrypt-hash>
+    }
+
+    # API surface — anything under /api/ goes to the FastAPI container.
+    handle /api/* {
+        reverse_proxy mindfield-api:8000
+    }
+
+    # Static SPA — nginx serves dist/, falls back to index.html for routes
+    # like /play/false_click or /session/<id>/profile.
+    handle {
+        reverse_proxy mindfield-static:80
+    }
+}
