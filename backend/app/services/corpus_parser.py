@@ -305,14 +305,84 @@ def parse_micro_cards(path: Path) -> tuple[list[dict], list[tuple[str, str]]]:
     return entries, parent_links
 
 
+# ── Raw corpus parser: docs/raw_corpus_4200.md ──────────────────────────────
+_RE_RAW_SECTION = re.compile(r"^## \*\*([IVXLCDM]+)\\?\.\s+(.+?)\*\*\s*$")
+_RE_RAW_CARD    = re.compile(r"^(\d{1,4})\\?\.\s+\*\*(.+?)\*\*\s*[—\-]\s*(.+?)\s*$")
+
+
+def parse_raw_corpus(path: Path) -> tuple[list[dict], list[tuple[str, str]]]:
+    """Returns (entries, parent_links).
+
+    Two kinds:
+      source_section  165 Roman-numeral sections (kind for parent grouping)
+      source_card     4200 numbered cards inside sections
+
+    Each card is linked to its containing section by CorpusLink relation='in_section'.
+    """
+    if not path.exists():
+        return [], []
+    lines = _read_lines(path)
+    entries: list[dict] = []
+    parent_links: list[tuple[str, str]] = []
+    current_section_code: str | None = None
+    seen_codes: set[str] = set()
+
+    for i, raw in enumerate(lines):
+        line = raw.rstrip()
+
+        sec = _RE_RAW_SECTION.match(line)
+        if sec:
+            roman = sec.group(1)
+            title = sec.group(2).strip()
+            code = f"src_section_{roman}"
+            if code not in seen_codes:
+                body = _slice_body(lines, i)
+                entries.append({
+                    "kind": "source_section",
+                    "code": code,
+                    "title": f"{roman}. {title}",
+                    "body_md": "(контейнер раздела — карточки ниже)",
+                    "source_pass": "raw_4200",
+                    "source_line": i + 1,
+                    "order_key": i,
+                })
+                seen_codes.add(code)
+            current_section_code = code
+            continue
+
+        card = _RE_RAW_CARD.match(line)
+        if card:
+            num = card.group(1)
+            name = card.group(2).strip()
+            desc = card.group(3).strip()
+            code = f"src_card_{num.zfill(4)}"
+            if code in seen_codes:
+                continue
+            entries.append({
+                "kind": "source_card",
+                "code": code,
+                "title": f"{num}. {name}",
+                "body_md": desc,
+                "source_pass": "raw_4200",
+                "source_line": i + 1,
+                "order_key": int(num),
+            })
+            seen_codes.add(code)
+            if current_section_code:
+                parent_links.append((current_section_code, code))
+
+    return entries, parent_links
+
+
 def parse_phase_docs(docs_dir: Path) -> list[dict]:
     """Ingest our own design / playtest / acceptance docs as corpus entries."""
     out: list[dict] = []
     if not docs_dir.exists():
         return out
+    skip = {"spec.md", "raw_corpus_4200.md"}  # parsed by other passes
     for i, fp in enumerate(sorted(docs_dir.glob("*.md"))):
-        if fp.name == "spec.md":
-            continue  # source, parsed structurally above
+        if fp.name in skip:
+            continue
         title = fp.stem.replace("_", " ").replace("-", " ").title()
         out.append({
             "kind": "phase_doc",

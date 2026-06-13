@@ -16,6 +16,8 @@ const LABEL: Record<string, string> = {
   micro_numbered: "Нумерованные пункты",
   micro_bullet: "Bullet-пункты",
   micro_aspect: "Аспекты внутри пород / R-корней",
+  source_section: "Разделы исходного корпуса 4200",
+  source_card: "Сырые карточки 4200",
 };
 
 export default function LibrarySection() {

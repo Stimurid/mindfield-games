@@ -4,7 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from ..models import CorpusEntry, CorpusLink
 from ..database import SessionLocal, engine
-from .corpus_parser import parse_corpus, parse_phase_docs, parse_micro_cards
+from .corpus_parser import parse_corpus, parse_phase_docs, parse_micro_cards, parse_raw_corpus
 
 
 def _ensure_fts5() -> None:
@@ -74,6 +74,11 @@ def ingest_corpus_if_needed() -> dict:
     # Second pass: micro-cards that live INSIDE top-level entries.
     micro_entries, parent_links = parse_micro_cards(spec_path)
     entries.extend(micro_entries)
+
+    # Third pass: the 4200 raw cards from docs/raw_corpus_4200.md (165 sections).
+    raw_entries, raw_links = parse_raw_corpus(docs_dir / "raw_corpus_4200.md")
+    entries.extend(raw_entries)
+    parent_links.extend(raw_links)
 
     if not entries:
         return {"ingested": 0, "skipped": "no source files"}
