@@ -13,15 +13,19 @@ router = APIRouter(prefix="/api/library", tags=["library"])
 
 
 _KIND_LABEL = {
-    "attractor":  "Аттракторы",
-    "r_root":     "Корневые операционные аттракторы",
-    "breed":      "Породы",
-    "chimera":    "Химерная матрица",
-    "precard":    "Карточки 1-7",
-    "residual":   "Остатки",
-    "genome":     "Геномы первых четырёх",
-    "appspec":    "App-spec",
-    "phase_doc":  "Документы фаз разработки",
+    "attractor":      "Аттракторы",
+    "r_root":         "Корневые операционные аттракторы",
+    "breed":          "Породы",
+    "chimera":        "Химерная матрица",
+    "precard":        "Карточки 1-7",
+    "residual":       "Остатки",
+    "genome":         "Геномы первых четырёх",
+    "appspec":        "App-spec",
+    "phase_doc":      "Документы фаз разработки",
+    "micro_game":     "Микро-игры внутри аттракторов (малое/игра/большой)",
+    "micro_numbered": "Нумерованные пункты",
+    "micro_bullet":   "Bullet-пункты",
+    "micro_aspect":   "Аспекты внутри пород / R-корней",
 }
 
 

@@ -12,6 +12,10 @@ const LABEL: Record<string, string> = {
   genome: "Геномы первых четырёх",
   appspec: "App-spec",
   phase_doc: "Документы фаз разработки",
+  micro_game: "Микро-игры (малое / игра / большой)",
+  micro_numbered: "Нумерованные пункты",
+  micro_bullet: "Bullet-пункты",
+  micro_aspect: "Аспекты внутри пород / R-корней",
 };
 
 export default function LibrarySection() {

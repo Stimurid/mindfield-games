@@ -2,9 +2,9 @@
 from pathlib import Path
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from ..models import CorpusEntry
+from ..models import CorpusEntry, CorpusLink
 from ..database import SessionLocal, engine
-from .corpus_parser import parse_corpus, parse_phase_docs
+from .corpus_parser import parse_corpus, parse_phase_docs, parse_micro_cards
 
 
 def _ensure_fts5() -> None:
@@ -71,6 +71,10 @@ def ingest_corpus_if_needed() -> dict:
     entries.extend(parse_corpus(spec_path))
     entries.extend(parse_phase_docs(docs_dir))
 
+    # Second pass: micro-cards that live INSIDE top-level entries.
+    micro_entries, parent_links = parse_micro_cards(spec_path)
+    entries.extend(micro_entries)
+
     if not entries:
         return {"ingested": 0, "skipped": "no source files"}
 
@@ -86,6 +90,29 @@ def ingest_corpus_if_needed() -> dict:
         if new_count:
             db.commit()
             _backfill_fts5(db)
-        return {"ingested": new_count, "total": db.query(CorpusEntry).count()}
+
+        # Link micro-cards to their parents (idempotent).
+        code_to_id = {c: cid for c, cid in db.query(CorpusEntry.code, CorpusEntry.id).all()}
+        existing_links = {
+            (p, c) for p, c in db.query(CorpusLink.parent_id, CorpusLink.child_id).all()
+        }
+        new_links = 0
+        for parent_code, child_code in parent_links:
+            pid = code_to_id.get(parent_code)
+            cid = code_to_id.get(child_code)
+            if not pid or not cid:
+                continue
+            if (pid, cid) in existing_links:
+                continue
+            db.add(CorpusLink(parent_id=pid, child_id=cid, relation="contains"))
+            new_links += 1
+        if new_links:
+            db.commit()
+
+        return {
+            "ingested": new_count,
+            "links": new_links,
+            "total": db.query(CorpusEntry).count(),
+        }
     finally:
         db.close()
