@@ -1,0 +1,24 @@
+{
+  "id": "assistant_as_foreign",
+  "title": "Помощник как чужой / Assistant as Foreign",
+  "short_title": "Assistant as Foreign",
+  "function": "Различать машинную чуждость: гладкость, буквальность, моральное сглаживание, потерю регистра, украденный вопрос",
+  "roots": ["R5", "R11"],
+  "field_type": "card_sorting",
+  "player_actions": ["sort_card", "defend_fate", "revise_fate"],
+  "rounds": [
+    {"id": "read", "title": "Read",  "instruction": "Прочти 20 ответов LLM-помощника. Это не оценка качества.", "time_sec": 180},
+    {"id": "sort", "title": "Sort",  "instruction": "Раскидай по 4 типам машинной чуждости: гладкость / буквальность / сглаживание / потерянный регистр.", "time_sec": 360},
+    {"id": "defend","title":"Defend","instruction": "Литералист-чужой даст плоское чтение нескольких карточек. Подтверди или измени.", "time_sec": 240}
+  ],
+  "llm_roles": [{"id": "literal_alien", "triggered_on_action": "sort_card"}],
+  "verdicts": [],
+  "fates": ["smooth", "literal", "moral_smoothing", "lost_register"],
+  "absence_types": [],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["card_id", "fate", "alien_reading", "revision"],
+  "replay_mutation": {"by_profile_bias": true, "mutation_axis": ["sharpen_smoothness", "increase_register_loss"]},
+  "toxins": ["банальная демонизация ИИ", "вера в ИИ как партнёра"],
+  "profile_dimensions": ["alien_blindness", "fate_distribution", "revisions"]
+}

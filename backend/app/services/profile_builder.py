@@ -313,12 +313,217 @@ def build_promise_court_profile(moves: list[dict], interventions: list[dict]) ->
     }
 
 
+_GENERIC_CARD_SORTING_DIRECTIVES = {
+    "skewed_to_first":   "next round: include cards that look like the player's preferred zone but actually belong to another — flush that bias",
+    "skewed_to_last":    "next round: salt the deck with cards that match the player's safe last-zone but carry a different operation",
+    "no_revisions":      "next round: stage borderline cards where the advocate's pushback should produce at least one revision",
+    "balanced":          "next round: introduce a harder borderline tier — half-and-half by surface, split by operation",
+}
+
+
+def _generic_card_sorting_profile(moves: list[dict], interventions: list[dict],
+                                   game_id: str,
+                                   primary_dim_name: str = "selection_bias") -> dict:
+    """Reusable profile shape for the card_sorting-based породы.
+
+    Tracks fate distribution, revisions, and computes a 'skewed_to_<zone>' bias
+    when the player overuses a single zone.
+    """
+    fates = Counter()
+    revisions = 0
+    for m in moves:
+        if m["action"] == "sort_card":
+            fates[m["payload"].get("fate", "unknown")] += 1
+        if m["action"] == "revise_fate":
+            revisions += 1
+    total = sum(fates.values()) or 1
+    top = fates.most_common(1)
+    bias_tag = "balanced"
+    if top and top[0][1] / total >= 0.55:
+        bias_tag = "skewed_to_first"
+    elif revisions == 0 and total >= 6:
+        bias_tag = "no_revisions"
+    target = bias_tag if bias_tag in _GENERIC_CARD_SORTING_DIRECTIVES else "balanced"
+    return {
+        "dimensions": {
+            primary_dim_name: bias_tag,
+            "fate_distribution": dict(fates),
+            "revisions": revisions,
+            "dominant_zone": top[0][0] if top else None,
+        },
+        "replay_targets": [target],
+        "replay_directives": [_GENERIC_CARD_SORTING_DIRECTIVES[target]],
+        "markdown_summary": (
+            f"## {game_id} profile\n"
+            f"- {primary_dim_name}: **{bias_tag}**\n"
+            f"- Fates: {dict(fates)}\n"
+            f"- Revisions: {revisions}\n"
+            f"- Replay directive: {_GENERIC_CARD_SORTING_DIRECTIVES[target]}\n"
+        ),
+    }
+
+
+def build_assistant_as_foreign_profile(moves, interventions):
+    return _generic_card_sorting_profile(moves, interventions, "assistant_as_foreign", "alien_blindness")
+
+
+def build_agent_passport_profile(moves, interventions):
+    return _generic_card_sorting_profile(moves, interventions, "agent_passport", "agency_detection_bias")
+
+
+def build_false_consensus_profile(moves, interventions):
+    return _generic_card_sorting_profile(moves, interventions, "false_consensus", "consensus_bias")
+
+
+def build_burn_cognitor_profile(moves, interventions):
+    return _generic_card_sorting_profile(moves, interventions, "burn_cognitor", "idol_attachment")
+
+
+# Прсомпт-снасть / Игра под захватом — reuse the False Click clickable_text shape
+# but rename the bias and tweak the directive ladder.
+_PROMPT_TACKLE_DIRECTIVES = {
+    "load_bearing_addict": "next round: include scaffold pieces that the player WILL identify as load-bearing — push them to find the operation that replaces them",
+    "shed_addict":         "next round: include genuinely load-bearing constraints that look like scaffolds — punish over-shedding",
+    "balanced":            "next round: include a piece labelled scaffold whose removal silently changes the operation — verify you notice the drift",
+}
+
+_CAPTURE_DIRECTIVES = {
+    "lost_field":    "next round: increase decorative noise blocks — verify you don't lose the field first under pressure",
+    "lost_proof":    "next round: shorten the prove step — verify you don't drop the operation proof first",
+    "lost_subject":  "next round: hide the speaker tag — verify subject is what you defend",
+    "lost_register": "next round: switch register mid-message — verify register is what you defend",
+    "held":          "next round: increase pressure along the axis where you LAST broke — calibration",
+}
+
+
+def build_prompt_tackle_profile(moves, interventions):
+    verdicts = Counter()
+    for m in moves:
+        if m["action"] == "assign_verdict":
+            v = m["payload"].get("verdict")
+            if v:
+                verdicts[v] += 1
+    total = sum(verdicts.values()) or 1
+    if verdicts.get("load_bearing", 0) / total > 0.6:
+        bias = "load_bearing_addict"
+    elif verdicts.get("removable", 0) / total > 0.6:
+        bias = "shed_addict"
+    else:
+        bias = "balanced"
+    target = bias
+    return {
+        "dimensions": {
+            "scaffold_dependency": bias,
+            "verdict_distribution": dict(verdicts),
+        },
+        "replay_targets": [target],
+        "replay_directives": [_PROMPT_TACKLE_DIRECTIVES[target]],
+        "markdown_summary": (
+            f"## Prompt Tackle profile\n"
+            f"- Scaffold dependency: **{bias}**\n"
+            f"- Verdicts: {dict(verdicts)}\n"
+            f"- Replay directive: {_PROMPT_TACKLE_DIRECTIVES[target]}\n"
+        ),
+    }
+
+
+def build_game_under_capture_profile(moves, interventions):
+    verdicts = Counter()
+    for m in moves:
+        if m["action"] == "assign_verdict":
+            v = m["payload"].get("verdict")
+            if v:
+                verdicts[v] += 1
+    if verdicts.get("held_operation", 0) >= max(1, sum(verdicts.values()) - 1):
+        bias = "held"
+    else:
+        # Pick the most common 'lost_*' as the first-dropped axis.
+        lost_only = {k: v for k, v in verdicts.items() if k.startswith("lost_")}
+        bias = max(lost_only, key=lost_only.get) if lost_only else "held"
+    target = bias if bias in _CAPTURE_DIRECTIVES else "held"
+    return {
+        "dimensions": {
+            "first_dropped_axis": bias.replace("lost_", "") if bias != "held" else "none",
+            "pressure_dropoff": "stable" if bias == "held" else "weak",
+            "verdict_distribution": dict(verdicts),
+        },
+        "replay_targets": [target],
+        "replay_directives": [_CAPTURE_DIRECTIVES[target]],
+        "markdown_summary": (
+            f"## Game Under Capture profile\n"
+            f"- First dropped axis: **{bias}**\n"
+            f"- Verdicts: {dict(verdicts)}\n"
+            f"- Replay directive: {_CAPTURE_DIRECTIVES[target]}\n"
+        ),
+    }
+
+
+# Ontology Customs reuses medium_shift_phrase actions but with a different
+# semantic axis: 'preserved | distorted | smuggled | forbidden | new_organ'.
+_CUSTOMS_DIRECTIVES = {
+    "smuggling_blind": "next round: stage a ход which only LOOKS preserved across ontologies — verify you spot the smuggled change",
+    "over_distortion": "next round: include a ход whose distortion is correct adaptation — verify you don't over-reject",
+    "preserved_addict":"next round: ввести ход который реально не переносится — verify you stop declaring 'preserved'",
+    "balanced":        "next round: include a ход whose translation creates a genuine new organ — verify you name it correctly",
+}
+
+
+def build_ontology_customs_profile(moves, interventions):
+    actions = Counter()
+    repairs = 0
+    transfers = 0
+    transfer_action = None
+    for m in moves:
+        if m["action"] == "assign_phrase_action":
+            actions[m["payload"].get("phrase_action", "unknown")] += 1
+        if m["action"] == "repair_machine_reading":
+            repairs += 1
+        if m["action"] == "transfer_phrase":
+            transfers += 1
+            if m["payload"].get("preserves_action"):
+                transfer_action = m["payload"].get("target_medium")
+    total = sum(actions.values()) or 1
+    if actions.get("preserved", 0) / total >= 0.55:
+        bias = "preserved_addict"
+    elif actions.get("smuggled", 0) == 0 and total >= 3:
+        bias = "smuggling_blind"
+    elif actions.get("distorted", 0) / total >= 0.55:
+        bias = "over_distortion"
+    else:
+        bias = "balanced"
+    target = bias
+    return {
+        "dimensions": {
+            "transfer_accuracy": "action_transfer" if transfer_action else "content_transfer",
+            "smuggling_blindness": bias,
+            "action_distribution": dict(actions),
+            "repairs": repairs,
+        },
+        "replay_targets": [target],
+        "replay_directives": [_CUSTOMS_DIRECTIVES[target]],
+        "markdown_summary": (
+            f"## Ontology Customs profile\n"
+            f"- Smuggling read: **{bias}**\n"
+            f"- Declarations: {dict(actions)}\n"
+            f"- Transfer to new ontology: **{transfer_action or '—'}**\n"
+            f"- Replay directive: {_CUSTOMS_DIRECTIVES[target]}\n"
+        ),
+    }
+
+
 BUILDERS = {
     "false_click": build_false_click_profile,
     "missing_operation": build_missing_operation_profile,
     "sprout_or_slop": build_sprout_or_slop_profile,
     "register_sapper": build_register_sapper_profile,
     "promise_court": build_promise_court_profile,
+    "prompt_tackle": build_prompt_tackle_profile,
+    "assistant_as_foreign": build_assistant_as_foreign_profile,
+    "agent_passport": build_agent_passport_profile,
+    "ontology_customs": build_ontology_customs_profile,
+    "game_under_capture": build_game_under_capture_profile,
+    "false_consensus": build_false_consensus_profile,
+    "burn_cognitor": build_burn_cognitor_profile,
 }
 
 

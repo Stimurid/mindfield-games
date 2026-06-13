@@ -1,0 +1,24 @@
+{
+  "id": "agent_passport",
+  "title": "Паспорт сцены-агента / Scene-Agent Passport",
+  "short_title": "Agent Passport",
+  "function": "Отличить живую сцену-агента от декоративной маски",
+  "roots": ["R8", "R12"],
+  "field_type": "card_sorting",
+  "player_actions": ["sort_card", "defend_fate", "revise_fate"],
+  "rounds": [
+    {"id": "read", "title": "Read",   "instruction": "Прочти 16 фрагментов. Это могут быть сцены-агенты или декорации.", "time_sec": 180},
+    {"id": "sort", "title": "Sort",   "instruction": "Назначь паспорт: confirmed_agent / questionable / decorative_mask / fail.", "time_sec": 300},
+    {"id": "defend","title":"Defend", "instruction": "Прокурор атакует ваши агентные паспорта. Подтвердите или измените.", "time_sec": 180}
+  ],
+  "llm_roles": [{"id": "prosecutor", "triggered_on_action": "sort_card"}],
+  "verdicts": [],
+  "fates": ["confirmed_agent", "questionable", "decorative_mask", "fail"],
+  "absence_types": [],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["card_id", "fate", "prosecutor_attack", "revision"],
+  "replay_mutation": {"by_profile_bias": true, "mutation_axis": ["polish_masks", "hide_agency_markers"]},
+  "toxins": ["RPG-маски без поведения", "агентность как метафора"],
+  "profile_dimensions": ["agency_detection_bias", "fate_distribution", "revisions"]
+}

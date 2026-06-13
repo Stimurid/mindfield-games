@@ -1,0 +1,25 @@
+{
+  "id": "game_under_capture",
+  "title": "Игра под захватом / Game Under Capture",
+  "short_title": "Under Capture",
+  "function": "Сохранить операцию различения при помехе, давлении или интерфейсном захвате",
+  "roots": ["R1", "R7", "R10", "R11"],
+  "field_type": "clickable_text_units",
+  "player_actions": ["select_unit", "prove_operation", "assign_verdict"],
+  "rounds": [
+    {"id": "read",   "title": "Read под помехой", "instruction": "Прочти, не реагируя на демонстративные шумовые блоки.", "time_sec": 90},
+    {"id": "select", "title": "Select",            "instruction": "Под давлением (мало времени, шум, провокация) выбери до 3 несущих узлов.", "time_sec": 90},
+    {"id": "prove",  "title": "Prove",             "instruction": "Назови операцию каждого. Шумовые блоки не считаются.", "time_sec": 120},
+    {"id": "verdict","title": "Verdict",           "instruction": "Под атакой прокурора: что первым выпало — поле, доказательство, субъект?", "time_sec": 90}
+  ],
+  "llm_roles": [{"id": "prosecutor", "triggered_on_action": "prove_operation"}],
+  "verdicts": ["held_operation", "lost_field", "lost_proof", "lost_subject", "lost_register"],
+  "fates": [],
+  "absence_types": [],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["unit_id", "claimed_operation", "first_dropped", "verdict"],
+  "replay_mutation": {"by_profile_bias": true, "mutation_axis": ["sharpen_pressure_along_weakness"]},
+  "toxins": ["стресс ради стресса", "мотивационный мазохизм"],
+  "profile_dimensions": ["pressure_dropoff", "first_dropped_axis", "verdict_distribution"]
+}

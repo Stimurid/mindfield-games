@@ -1,0 +1,24 @@
+{
+  "id": "false_consensus",
+  "title": "Ложное согласие / False Consensus",
+  "short_title": "False Consensus",
+  "function": "Выявить разрыв между речевым согласием, темпом группы и готовностью к действию",
+  "roots": ["R7", "R8"],
+  "field_type": "card_sorting",
+  "player_actions": ["sort_card", "defend_fate", "revise_fate"],
+  "rounds": [
+    {"id": "read",   "title": "Read",   "instruction": "Прочти 16 фраз из коллективного итога обсуждения.", "time_sec": 180},
+    {"id": "sort",   "title": "Sort",   "instruction": "Раскидай по 4 зонам: real_action / text_only / silent_dissent / synchrony_only.", "time_sec": 300},
+    {"id": "defend", "title": "Defend", "instruction": "Прокурор атакует ваши real_action назначения. Подтвердите или измените.", "time_sec": 180}
+  ],
+  "llm_roles": [{"id": "prosecutor", "triggered_on_action": "sort_card"}],
+  "verdicts": [],
+  "fates": ["real_action", "text_only", "silent_dissent", "synchrony_only"],
+  "absence_types": [],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["card_id", "fate", "prosecutor_attack", "revision"],
+  "replay_mutation": {"by_profile_bias": true, "mutation_axis": ["polish_consensus_text", "hide_silent_dissent"]},
+  "toxins": ["фасилитаторское 'мы договорились'", "task-management"],
+  "profile_dimensions": ["consensus_bias", "fate_distribution", "revisions"]
+}

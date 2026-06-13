@@ -8,7 +8,9 @@ import GameShell from "../components/GameShell";
 // gpt-4.1-mini holds prosecutor/spackler/sprout_advocate cleanly and is faster;
 // literal_alien (Register Sapper) needs grok-4-0709 to avoid generic blindness.
 function gameDefaultModel(gameId: string | undefined): string {
-  if (gameId === "register_sapper") return "grok-4-0709";
+  // literal_alien role lives in register_sapper and assistant_as_foreign;
+  // grok-4 holds the register-blind contract more reliably than gpt-4.1-mini.
+  if (gameId === "register_sapper" || gameId === "assistant_as_foreign") return "grok-4-0709";
   return "gpt-4.1-mini";
 }
 

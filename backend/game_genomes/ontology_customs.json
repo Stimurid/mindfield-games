@@ -1,0 +1,25 @@
+{
+  "id": "ontology_customs",
+  "title": "Таможня онтологий / Ontology Customs",
+  "short_title": "Ontology Customs",
+  "function": "Проверять перенос операции между онтологиями, языками, медиа и субстратами",
+  "roots": ["R3", "R8", "R9"],
+  "field_type": "medium_shift_phrase",
+  "player_actions": ["assign_phrase_action", "compare_medium_shift", "repair_machine_reading", "transfer_phrase"],
+  "rounds": [
+    {"id": "read",     "title": "Read",     "instruction": "Один понятийный ход показывается ввезённым в 5 онтологий.", "time_sec": 180},
+    {"id": "declare",  "title": "Declare",  "instruction": "На каждом таможенном пункте — задекларируй: что сохранено, что искажено, что контрабандой просочилось.", "time_sec": 300},
+    {"id": "repair",   "title": "Repair",   "instruction": "Шпаклёвщик предложит гладкие переводы. Почини декларацию.", "time_sec": 240},
+    {"id": "transfer", "title": "Transfer", "instruction": "Перенеси ход в шестую онтологию, не указанную в материале.", "time_sec": 180}
+  ],
+  "llm_roles": [{"id": "spackler", "triggered_on_action": "compare_medium_shift"}],
+  "verdicts": [],
+  "fates": [],
+  "absence_types": [],
+  "mediums": ["psychology", "engineering", "philosophy", "interface", "body"],
+  "phrase_actions": ["preserved", "distorted", "smuggled", "forbidden", "new_organ"],
+  "trace_schema": ["medium", "declared_action", "machine_smooth", "repair", "transfer_target"],
+  "replay_mutation": {"by_profile_bias": true, "mutation_axis": ["sharpen_translation_temptation", "introduce_fake_isomorphism"]},
+  "toxins": ["стилизация перепиши как X", "ложная универсальность"],
+  "profile_dimensions": ["transfer_accuracy", "smuggling_blindness", "machine_smooth_susceptibility"]
+}

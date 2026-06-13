@@ -1,0 +1,25 @@
+{
+  "id": "prompt_tackle",
+  "title": "Промпт-снасть / Prompt Tackle",
+  "short_title": "Prompt Tackle",
+  "function": "Использовать промпт как временную снасть и снять её, сохранив операцию",
+  "roots": ["R5", "R6"],
+  "field_type": "clickable_text_units",
+  "player_actions": ["select_unit", "prove_operation", "assign_verdict"],
+  "rounds": [
+    {"id": "read",  "title": "Read",   "instruction": "Прочти свой промпт. Найди опору, без которой ты сам не доберёшься до операции.", "time_sec": 120},
+    {"id": "select","title": "Select", "instruction": "Отметь до 3 кусков, которые ты МОГ БЫ снять. Не которые удобно — а которые ты можешь заменить своей операцией.", "time_sec": 180},
+    {"id": "prove", "title": "Prove",  "instruction": "Для каждого назови операцию, которой ты заменишь снятый кусок.", "time_sec": 240},
+    {"id": "verdict","title":"Verdict","instruction": "Под давлением шпаклёвщика — оставляешь снятие или возвращаешь кусок как load-bearing?", "time_sec": 120}
+  ],
+  "llm_roles": [{"id": "spackler", "triggered_on_action": "prove_operation"}],
+  "verdicts": ["removable", "load_bearing", "operation_interiorized", "scaffold_addict"],
+  "fates": [],
+  "absence_types": [],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["unit_chosen", "claimed_operation", "spackler_pushback", "verdict"],
+  "replay_mutation": {"by_profile_bias": true, "mutation_axis": ["weaken_scaffold", "introduce_fake_scaffold", "silence_model"]},
+  "toxins": ["курс промптинга, коллекция формул"],
+  "profile_dimensions": ["scaffold_dependency", "interiorization_rate", "verdict_distribution"]
+}

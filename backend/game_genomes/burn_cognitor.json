@@ -1,0 +1,24 @@
+{
+  "id": "burn_cognitor",
+  "title": "Сжечь свой лучший когнитор / Burn Your Best Cognitor",
+  "short_title": "Burn Cognitor",
+  "function": "Проверить, стал ли найденный когнитор органом или идолом",
+  "roots": ["R2", "R12"],
+  "field_type": "card_sorting",
+  "player_actions": ["sort_card", "defend_fate", "revise_fate"],
+  "rounds": [
+    {"id": "read",   "title": "Read",   "instruction": "Прочти 12 кандидатов в когниторы — твои или коллективные удачные конструкции.", "time_sec": 180},
+    {"id": "sort",   "title": "Sort",   "instruction": "Назначь каждому стресс-тест: counter_example / alien_ontology / no_name / no_llm / market / body. Что когнитор выдерживает?", "time_sec": 360},
+    {"id": "defend", "title": "Defend", "instruction": "Адвокат-ростка защитит когнитор от уничтожения. Подтвердите сожжение или спасите.", "time_sec": 240}
+  ],
+  "llm_roles": [{"id": "sprout_advocate", "triggered_on_action": "sort_card"}],
+  "verdicts": [],
+  "fates": ["organ_extracted", "burned", "idol_kept", "transferred"],
+  "absence_types": [],
+  "mediums": [],
+  "phrase_actions": [],
+  "trace_schema": ["card_id", "stress_axis", "fate", "advocate_pushback"],
+  "replay_mutation": {"by_profile_bias": true, "mutation_axis": ["return_idol_under_new_name", "test_under_unfamiliar_substrate"]},
+  "toxins": ["культ собственной удачной сборки", "коллекционирование терминов"],
+  "profile_dimensions": ["idol_attachment", "fate_distribution", "burn_rate"]
+}
