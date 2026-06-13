@@ -2,7 +2,8 @@ export type FieldType =
   | "clickable_text_units"
   | "gap_click_text"
   | "card_sorting"
-  | "medium_shift_phrase";
+  | "medium_shift_phrase"
+  | "promise_court_text";
 
 export interface GameRound {
   id: string;
