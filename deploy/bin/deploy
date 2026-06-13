@@ -67,8 +67,8 @@ else
   die "api local failed (${LOCAL_API}) — check 'docker logs ${API_C}'"
 fi
 
-# Local static check
-LOCAL_WEB=$(docker exec "${WEB_C}" wget -qO- -S http://localhost/ 2>&1 | grep -c "HTTP/1.1 200" || true)
+# Local static check — force IPv4, nginx:alpine binds only on 0.0.0.0
+LOCAL_WEB=$(docker exec "${WEB_C}" wget -q4 -O /dev/null -S http://127.0.0.1/ 2>&1 | grep -c "HTTP/1.1 200" || true)
 if [[ "$LOCAL_WEB" -ge 1 ]]; then
   log "  web local : OK"
 else
