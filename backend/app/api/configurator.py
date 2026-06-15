@@ -7,7 +7,7 @@ from ..models import Organ, GenomeDraft
 from ..llm.provider import get_provider
 from ..services.organ_seed import BANK_LABEL, BANK_HINT
 from ..services.genome_promote import promote_draft, PromoteError, VALID_FIELD_TYPES
-from ..services.translation import translate_text
+from ..services.translation import translate_text, translate_strings_batch
 
 router = APIRouter(prefix="/api/configurator", tags=["configurator"])
 
@@ -32,9 +32,14 @@ def list_banks(lang: str = Query("ru"), db: Session = Depends(get_db)):
         for b in BANK_LABEL.keys()
     ]
     if lang != "ru":
+        strings = []
         for r in out:
-            r["label"] = translate_text(r["label"], lang, db)
-            r["hint"] = translate_text(r["hint"], lang, db)
+            if r["label"]: strings.append(r["label"])
+            if r["hint"]: strings.append(r["hint"])
+        table = translate_strings_batch(strings, lang, db)
+        for r in out:
+            r["label"] = table.get(r["label"], r["label"])
+            r["hint"] = table.get(r["hint"], r["hint"])
     return out
 
 
@@ -54,10 +59,15 @@ def list_organs(
         for o in rows
     ]
     if lang != "ru":
+        strings = []
         for r in out:
-            r["name"] = translate_text(r["name"], lang, db)
+            if r["name"]: strings.append(r["name"])
+            if r["description"]: strings.append(r["description"])
+        table = translate_strings_batch(strings, lang, db)
+        for r in out:
+            r["name"] = table.get(r["name"], r["name"])
             if r["description"]:
-                r["description"] = translate_text(r["description"], lang, db)
+                r["description"] = table.get(r["description"], r["description"])
     return out
 
 

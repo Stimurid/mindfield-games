@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Material
-from ..services.translation import translate_text, translate_material_payload
+from ..services.translation import translate_text, translate_material_payload, translate_strings_batch
 
 router = APIRouter(prefix="/api/materials", tags=["materials"])
 
@@ -18,8 +18,9 @@ def list_materials(gameId: str | None = None, lang: str = Query("ru"),
         for m in q.order_by(Material.namespace.desc(), Material.created_at.asc()).all()
     ]
     if lang != "ru":
+        table = translate_strings_batch([r["title"] for r in out if r.get("title")], lang, db)
         for r in out:
-            r["title"] = translate_text(r["title"], lang, db)
+            r["title"] = table.get(r["title"], r["title"])
     return out
 
 

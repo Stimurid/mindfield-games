@@ -13,7 +13,7 @@ from typing import Optional
 from ..database import get_db
 from ..models import CorpusEntry, Organ, TriageVerdict
 from ..services.organ_seed import BANK_LABEL
-from ..services.translation import translate_text
+from ..services.translation import translate_strings_batch
 
 
 router = APIRouter(prefix="/api/triage", tags=["triage"])
@@ -186,8 +186,9 @@ def triage_stats(
 def list_fates(lang: str = Query("ru"), db: Session = Depends(get_db)):
     out = [{"fate": f, "label": FATE_LABEL[f]} for f in FATES]
     if lang != "ru":
+        table = translate_strings_batch([r["label"] for r in out], lang, db)
         for r in out:
-            r["label"] = translate_text(r["label"], lang, db)
+            r["label"] = table.get(r["label"], r["label"])
     return out
 
 

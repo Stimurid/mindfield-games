@@ -5,7 +5,7 @@ from ..services.genome_loader import (
     load_all_genomes, get_genome,
     list_runtime_genome_ids_from_db, get_promoted_genome_summary,
 )
-from ..services.translation import translate_dict, GAME_PATHS, translate_text
+from ..services.translation import translate_dict, GAME_PATHS, translate_text, translate_strings_batch
 
 router = APIRouter(prefix="/api/games", tags=["games"])
 
@@ -14,26 +14,24 @@ router = APIRouter(prefix="/api/games", tags=["games"])
 def list_games(lang: str = Query("ru"), db: Session = Depends(get_db)):
     out = []
     for g in load_all_genomes().values():
-        item = {
+        out.append({
             "id": g.id,
             "title": g.title,
             "short_title": g.short_title,
             "function": g.function,
-        }
-        if lang != "ru":
-            item["title"] = translate_text(item["title"], lang, db)
-            item["short_title"] = translate_text(item["short_title"], lang, db)
-            item["function"] = translate_text(item["function"], lang, db)
-        out.append(item)
+        })
     for gid in list_runtime_genome_ids_from_db():
         s = get_promoted_genome_summary(gid)
-        if not s:
-            continue
-        if lang != "ru":
-            s["title"] = translate_text(s["title"], lang, db)
-            s["short_title"] = translate_text(s["short_title"], lang, db)
-            s["function"] = translate_text(s["function"], lang, db)
-        out.append(s)
+        if s:
+            out.append(s)
+    if lang != "ru":
+        # Single batch lookup + parallel LLM for whatever's not yet cached.
+        strings = [v for r in out for v in (r["title"], r["short_title"], r["function"]) if v]
+        table = translate_strings_batch(strings, lang, db)
+        for r in out:
+            r["title"] = table.get(r["title"], r["title"])
+            r["short_title"] = table.get(r["short_title"], r["short_title"])
+            r["function"] = table.get(r["function"], r["function"])
     return out
 
 

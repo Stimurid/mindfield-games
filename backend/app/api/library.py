@@ -14,6 +14,7 @@ from ..services.translation import (
     LIBRARY_ENTRY_LIST_PATHS,
     LIBRARY_ENTRY_DETAIL_PATHS,
     translate_dict,
+    translate_strings_batch,
 )
 
 router = APIRouter(prefix="/api/library", tags=["library"])
@@ -50,8 +51,9 @@ def list_sections(lang: str = Query("ru"), db: Session = Depends(get_db)):
         for k, c in sorted(rows, key=lambda r: list(_KIND_LABEL.keys()).index(r[0]) if r[0] in _KIND_LABEL else 99)
     ]
     if lang != "ru":
+        table = translate_strings_batch([s["label"] for s in out if s["label"]], lang, db)
         for s in out:
-            s["label"] = translate_text(s["label"], lang, db)
+            s["label"] = table.get(s["label"], s["label"])
     return out
 
 
@@ -92,8 +94,9 @@ def list_entries(
         for e in rows
     ]
     if lang != "ru":
+        table = translate_strings_batch([r["title"] for r in out if r["title"]], lang, db)
         for r in out:
-            r["title"] = translate_text(r["title"], lang, db)
+            r["title"] = table.get(r["title"], r["title"])
     return out
 
 
@@ -144,12 +147,16 @@ def get_entry(entry_id: str, lang: str = Query("ru"), db: Session = Depends(get_
         "children": [{"id": c[0].id, "code": c[0].code, "title": c[0].title, "relation": c[1]} for c in children],
     }
     if lang != "ru":
-        out["title"] = translate_text(out["title"], lang, db)
-        out["body_md"] = translate_text(out["body_md"], lang, db)
+        strings = [out["title"], out["body_md"]]
+        strings += [p["title"] for p in out["parents"] if p.get("title")]
+        strings += [c["title"] for c in out["children"] if c.get("title")]
+        table = translate_strings_batch([s for s in strings if s], lang, db)
+        out["title"] = table.get(out["title"], out["title"])
+        out["body_md"] = table.get(out["body_md"], out["body_md"])
         for p in out["parents"]:
-            p["title"] = translate_text(p["title"], lang, db)
+            p["title"] = table.get(p["title"], p["title"])
         for c in out["children"]:
-            c["title"] = translate_text(c["title"], lang, db)
+            c["title"] = table.get(c["title"], c["title"])
     return out
 
 
